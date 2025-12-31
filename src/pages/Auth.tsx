@@ -129,7 +129,7 @@ const Auth = () => {
   };
   return <div style={{
     background: 'var(--gradient-hero)'
-  }} className="min-h-screen p-4 text-accent flex items-center justify-center border-0 shadow-md">
+  }} className="min-h-screen p-4 text-accent flex items-center justify-center border-0 shadow-lg">
       <div className="w-full max-w-md">
         <div className="text-center mb-8 animate-slide-up">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
@@ -196,9 +196,7 @@ const Auth = () => {
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground mt-6 animate-slide-up-delay-2">
-          By continuing, you agree to our Terms of Service and Privacy Policy
-        </p>
+        <p className="text-center text-xs text-muted-foreground mt-6 animate-slide-up-delay-2">By continuing, you agree to our Terms of Service and Privacy Policy</p>
       </div>
     </div>;
 };
