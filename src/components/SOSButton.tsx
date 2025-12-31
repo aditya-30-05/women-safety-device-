@@ -89,7 +89,7 @@ const SOSButton = ({ size = 'default' }: SOSButtonProps) => {
       <div className="flex flex-col items-center gap-4">
         <Button
           variant="sos"
-          size="sos"
+          size="icon-lg"
           onMouseDown={handlePress}
           onMouseUp={handleRelease}
           onMouseLeave={handleRelease}
