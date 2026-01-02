@@ -7,6 +7,7 @@ import TrustedContacts from '@/components/TrustedContacts';
 import QuickActions from '@/components/QuickActions';
 import SafetyStatus from '@/components/SafetyStatus';
 import AlertHistory from '@/components/AlertHistory';
+import { JourneyTracking } from '@/components/JourneyTracking';
 import { Shield, LogOut, User, Settings } from 'lucide-react';
 import {
   DropdownMenu,
@@ -91,8 +92,13 @@ const Dashboard = () => {
           <SafetyStatus />
         </div>
 
-        {/* Quick Actions */}
+        {/* Journey Tracking */}
         <div className="animate-slide-up-delay-1">
+          <JourneyTracking />
+        </div>
+
+        {/* Quick Actions */}
+        <div className="animate-slide-up-delay-2">
           <QuickActions />
         </div>
 

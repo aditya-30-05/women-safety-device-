@@ -50,6 +50,48 @@ export type Database = {
         }
         Relationships: []
       }
+      journeys: {
+        Row: {
+          check_in_interval: number
+          created_at: string
+          destination: string
+          expected_arrival: string
+          id: string
+          last_check_in: string | null
+          next_check_in: string | null
+          start_time: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          check_in_interval?: number
+          created_at?: string
+          destination: string
+          expected_arrival: string
+          id?: string
+          last_check_in?: string | null
+          next_check_in?: string | null
+          start_time?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          check_in_interval?: number
+          created_at?: string
+          destination?: string
+          expected_arrival?: string
+          id?: string
+          last_check_in?: string | null
+          next_check_in?: string | null
+          start_time?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
