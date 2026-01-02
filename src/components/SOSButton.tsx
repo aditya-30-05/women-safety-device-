@@ -1,21 +1,24 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Smartphone, Vibrate } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useShakeDetection } from '@/hooks/use-shake-detection';
 
 interface SOSButtonProps {
   size?: 'default' | 'large';
+  enableShake?: boolean;
 }
 
-const SOSButton = ({ size = 'default' }: SOSButtonProps) => {
+const SOSButton = ({ size = 'default', enableShake = true }: SOSButtonProps) => {
   const [isPressed, setIsPressed] = useState(false);
   const [isTriggering, setIsTriggering] = useState(false);
+  const [shakeEnabled, setShakeEnabled] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const triggerSOS = async () => {
+  const triggerSOS = useCallback(async () => {
     if (!user) return;
     
     setIsTriggering(true);
@@ -68,6 +71,63 @@ const SOSButton = ({ size = 'default' }: SOSButtonProps) => {
       setIsTriggering(false);
       setIsPressed(false);
     }
+  }, [user, toast]);
+
+  // Shake detection
+  const { 
+    isSupported: shakeSupported, 
+    permissionStatus,
+    requestPermission,
+    isEnabled: shakeActive,
+    setIsEnabled: setShakeActive
+  } = useShakeDetection({
+    threshold: 20,
+    shakeCount: 3,
+    timeout: 1500,
+    onShake: () => {
+      if (!isTriggering && shakeEnabled) {
+        // Vibrate to confirm shake detection
+        if (navigator.vibrate) {
+          navigator.vibrate([200, 100, 200]);
+        }
+        toast({
+          title: "Shake Detected!",
+          description: "Triggering SOS alert...",
+          variant: "destructive",
+        });
+        triggerSOS();
+      }
+    },
+    enabled: shakeEnabled && enableShake,
+  });
+
+  const handleEnableShake = async () => {
+    if (permissionStatus === 'prompt' || permissionStatus === 'denied') {
+      const granted = await requestPermission();
+      if (granted) {
+        setShakeEnabled(true);
+        setShakeActive(true);
+        toast({
+          title: "Shake SOS Enabled",
+          description: "Shake your phone 3 times quickly to trigger SOS",
+        });
+      } else {
+        toast({
+          title: "Permission Denied",
+          description: "Motion sensor access is required for shake detection",
+          variant: "destructive",
+        });
+      }
+    } else if (permissionStatus === 'granted') {
+      setShakeEnabled(!shakeEnabled);
+      setShakeActive(!shakeEnabled);
+      toast({
+        title: shakeEnabled ? "Shake SOS Disabled" : "Shake SOS Enabled",
+        description: shakeEnabled 
+          ? "Shake detection turned off" 
+          : "Shake your phone 3 times quickly to trigger SOS",
+      });
+    }
   };
 
   const handlePress = () => {
@@ -103,8 +163,25 @@ const SOSButton = ({ size = 'default' }: SOSButtonProps) => {
             <span>{isTriggering ? 'Sending...' : 'SOS'}</span>
           </div>
         </Button>
-        <p className="text-sm text-muted-foreground text-center">
-          Hold for 1 second to send emergency alert
+        
+        {/* Shake Detection Toggle */}
+        {enableShake && shakeSupported && (
+          <Button
+            variant={shakeEnabled ? "secondary" : "outline"}
+            size="sm"
+            onClick={handleEnableShake}
+            className="gap-2"
+          >
+            <Vibrate className={`w-4 h-4 ${shakeEnabled ? 'animate-pulse' : ''}`} />
+            {shakeEnabled ? 'Shake SOS Active' : 'Enable Shake SOS'}
+          </Button>
+        )}
+        
+        <p className="text-sm text-muted-foreground text-center max-w-[200px]">
+          {shakeEnabled 
+            ? "Shake phone 3x or hold button for 1s"
+            : "Hold for 1 second to send emergency alert"
+          }
         </p>
       </div>
     );
