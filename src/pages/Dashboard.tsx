@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import SafetyStatus from '@/components/SafetyStatus';
 import AlertHistory from '@/components/AlertHistory';
 import { JourneyTracking } from '@/components/JourneyTracking';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import ThreatPrediction from '@/components/ThreatPrediction';
 import { Shield, LogOut, User, Settings } from 'lucide-react';
 import {
   DropdownMenu,
@@ -94,6 +95,11 @@ const Dashboard = () => {
         {/* Safety Status */}
         <div className="animate-slide-up">
           <SafetyStatus />
+        </div>
+
+        {/* AI Threat Prediction */}
+        <div className="animate-slide-up-delay-1">
+          <ThreatPrediction />
         </div>
 
         {/* Journey Tracking */}
