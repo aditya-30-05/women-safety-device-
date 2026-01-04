@@ -218,40 +218,50 @@ export const JourneyTracking = () => {
 
   return (
     <>
-      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <MapPin className="h-5 w-5 text-primary" />
-            Journey Tracking
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-full">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <MapPin className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <div>Journey Tracking</div>
+              <p className="text-xs text-muted-foreground font-normal mt-0.5">
+                Track your trips and check-ins
+              </p>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {activeJourney ? (
             <div className="space-y-4">
-              <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Destination</span>
-                  <span className="font-medium">{activeJourney.destination}</span>
-                </div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Check-in Interval</span>
-                  <span className="font-medium">{activeJourney.check_in_interval} min</span>
-                </div>
-                {timeUntilCheckIn !== null && (
+              <div className="p-5 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 shadow-sm">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Next Check-in</span>
-                    <span className={`font-bold ${timeUntilCheckIn < 60 ? 'text-destructive' : 'text-primary'}`}>
-                      {formatTime(timeUntilCheckIn)}
-                    </span>
+                    <span className="text-sm font-medium text-muted-foreground">Destination</span>
+                    <span className="font-semibold text-foreground text-right">{activeJourney.destination}</span>
                   </div>
-                )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">Check-in Interval</span>
+                    <span className="font-semibold text-foreground">{activeJourney.check_in_interval} min</span>
+                  </div>
+                  {timeUntilCheckIn !== null && (
+                    <div className="flex items-center justify-between pt-2 border-t border-primary/20">
+                      <span className="text-sm font-medium text-muted-foreground">Next Check-in</span>
+                      <span className={`font-bold text-lg ${timeUntilCheckIn < 60 ? 'text-destructive animate-pulse' : 'text-primary'}`}>
+                        {formatTime(timeUntilCheckIn)}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   onClick={handleCheckIn}
-                  className="flex-1"
+                  className="flex-1 h-11"
                   variant="default"
+                  size="lg"
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
                   I'm Safe
@@ -259,7 +269,8 @@ export const JourneyTracking = () => {
                 <Button
                   onClick={() => endJourney('completed')}
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 h-11"
+                  size="lg"
                 >
                   <Square className="h-4 w-4 mr-2" />
                   End Trip

@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Shield, Users, MapPin, Bell, ArrowRight, CheckCircle } from 'lucide-react';
+import { Users, MapPin, Bell, ArrowRight, CheckCircle } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -17,7 +18,7 @@ const Index = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--gradient-hero)' }}>
-        <Shield className="w-12 h-12 text-primary animate-pulse" />
+        <Logo size="lg" className="animate-pulse" />
       </div>
     );
   }
@@ -53,11 +54,8 @@ const Index = () => {
       <section className="relative overflow-hidden">
         <div className="container mx-auto px-4 pt-12 pb-20">
           {/* Logo */}
-          <div className="flex items-center gap-3 mb-16 animate-slide-up">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-primary" />
-            </div>
-            <span className="font-display font-bold text-2xl">SafeHer</span>
+          <div className="mb-16 animate-slide-up">
+            <Logo size="lg" showText={true} />
           </div>
 
           {/* Hero Content */}
@@ -179,9 +177,8 @@ const Index = () => {
       {/* Footer */}
       <footer className="py-8 border-t border-border">
         <div className="container mx-auto px-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Shield className="w-5 h-5 text-primary" />
-            <span className="font-display font-bold">SafeHer</span>
+          <div className="flex items-center justify-center mb-4">
+            <Logo size="sm" showText={true} />
           </div>
           <p className="text-sm text-muted-foreground">
             © 2024 SafeHer. Empowering women's safety worldwide.

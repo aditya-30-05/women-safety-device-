@@ -160,6 +160,26 @@
   .safe-glow {
     box-shadow: 0 0 40px -10px hsl(var(--success) / 0.5);
   }
+
+  /* Custom scrollbar */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 10px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 10px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
 }
 
 @layer utilities {
@@ -214,4 +234,21 @@
 .animate-slide-up-delay-3 {
   animation: slide-up 0.5s ease-out 0.3s forwards;
   opacity: 0;
+}
+
+/* Stealth Mode Disguises */
+.disguise-calculator {
+  /* Calculator theme - neutral colors */
+}
+
+.disguise-notes {
+  /* Notes app theme - clean, minimal */
+}
+
+.disguise-music {
+  /* Music player theme - dark, modern */
+}
+
+.disguise-settings {
+  /* Settings theme - system-like */
 }

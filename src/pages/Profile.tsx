@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, User, Phone, Save } from 'lucide-react';
+import SecuritySettings from '@/components/SecuritySettings';
 
 interface Profile {
   id: string;
@@ -116,7 +117,7 @@ const Profile = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 max-w-md">
+      <main className="container mx-auto px-4 py-6 max-w-4xl space-y-6">
         <Card className="glass-card animate-slide-up">
           <CardHeader>
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
@@ -179,6 +180,11 @@ const Profile = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Security Settings */}
+        <div className="animate-slide-up-delay-1">
+          <SecuritySettings />
+        </div>
       </main>
     </div>
   );

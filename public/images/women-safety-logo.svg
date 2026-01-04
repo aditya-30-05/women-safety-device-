@@ -1,0 +1,69 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Glow Effect -->
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <linearGradient id="gradient1" x1="256" y1="0" x2="256" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4f46e5"/>
+      <stop offset="30%" stop-color="#6366f1"/>
+      <stop offset="70%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#a5b4fc"/>
+    </linearGradient>
+    <linearGradient id="gradient2" x1="256" y1="64" x2="256" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="50%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#c7d2fe"/>
+    </linearGradient>
+    <radialGradient id="innerGlow" cx="256" cy="240" r="80">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  
+  <!-- Main Shield with gradient -->
+  <path d="M256 24L40 108v152c0 150.5 121.5 272 272 272s272-121.5 272-272V108L256 24z" 
+        fill="url(#gradient1)" 
+        filter="url(#glow)"
+        opacity="0.95"/>
+  
+  <!-- Inner Shield Layer -->
+  <path d="M256 48L88 128v128c0 132.5 107.5 240 240 240s240-107.5 240-240V128L256 48z" 
+        fill="url(#gradient2)"/>
+  
+  <!-- Highlight/Shine Effect -->
+  <path d="M256 48L88 128v128c0 132.5 107.5 240 240 240s240-107.5 240-240V128L256 48z" 
+        fill="url(#innerGlow)"/>
+  
+  <!-- Modern Safety Symbol - Circular Badge -->
+  <circle cx="256" cy="240" r="72" fill="white" opacity="0.95"/>
+  <circle cx="256" cy="240" r="72" fill="url(#innerGlow)"/>
+  
+  <!-- Inner Circle -->
+  <circle cx="256" cy="240" r="56" fill="#4f46e5" opacity="0.1"/>
+  
+  <!-- Safety Cross/Plus Symbol -->
+  <g stroke="#4f46e5" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <line x1="256" y1="200" x2="256" y2="280"/>
+    <line x1="216" y1="240" x2="296" y2="240"/>
+  </g>
+  
+  <!-- Decorative Elements - Modern Dots -->
+  <circle cx="160" cy="160" r="6" fill="#ffffff" opacity="0.9"/>
+  <circle cx="352" cy="160" r="6" fill="#ffffff" opacity="0.9"/>
+  <circle cx="160" cy="320" r="6" fill="#ffffff" opacity="0.9"/>
+  <circle cx="352" cy="320" r="6" fill="#ffffff" opacity="0.9"/>
+  
+  <!-- Additional Accent Dots -->
+  <circle cx="200" cy="140" r="4" fill="#c7d2fe" opacity="0.8"/>
+  <circle cx="312" cy="140" r="4" fill="#c7d2fe" opacity="0.8"/>
+  <circle cx="200" cy="340" r="4" fill="#c7d2fe" opacity="0.8"/>
+  <circle cx="312" cy="340" r="4" fill="#c7d2fe" opacity="0.8"/>
+  
+  <!-- Top Accent Line -->
+  <path d="M256 48L240 56L256 64L272 56Z" fill="#ffffff" opacity="0.6"/>
+</svg>

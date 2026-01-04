@@ -6,13 +6,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Shield, AlertTriangle } from 'lucide-react';
+import Logo from '@/components/Logo';
+import { PasswordStrengthMeter } from '@/components/PasswordStrengthMeter';
+import { validatePasswordStrength, getRateLimitRemaining } from '@/lib/security';
 import { z } from 'zod';
+
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters')
+  password: z.string().min(1, 'Password is required')
 });
-const signupSchema = loginSchema.extend({
+
+const signupSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .refine((pwd) => validatePasswordStrength(pwd).isStrong, {
+      message: 'Password does not meet security requirements'
+    }),
   fullName: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name is too long')
 });
 const Auth = () => {
@@ -23,9 +34,13 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [rateLimitRemaining, setRateLimitRemaining] = useState(5);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   const {
     signIn,
     signUp,
+    resetPassword,
     user
   } = useAuth();
   const navigate = useNavigate();
@@ -37,6 +52,13 @@ const Auth = () => {
       navigate('/dashboard');
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    if (isLogin && email) {
+      const remaining = getRateLimitRemaining(`signin_${email}`, 5, 15 * 60 * 1000);
+      setRateLimitRemaining(remaining);
+    }
+  }, [isLogin, email]);
   const validateForm = () => {
     try {
       if (isLogin) {
@@ -132,8 +154,8 @@ const Auth = () => {
   }} className="min-h-screen p-4 text-accent flex items-center justify-center border-0 shadow-lg">
       <div className="w-full max-w-md">
         <div className="text-center mb-8 animate-slide-up">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-            <Shield className="w-8 h-8 text-primary" />
+          <div className="flex justify-center mb-4">
+            <Logo size="xl" />
           </div>
           <h1 className="text-3xl font-display font-bold text-foreground">SafeHer</h1>
           <p className="text-muted-foreground mt-2">Your safety, our priority</p>
@@ -169,7 +191,14 @@ const Auth = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                  {isLogin && rateLimitRemaining < 5 && (
+                    <span className="text-xs text-muted-foreground">
+                      {rateLimitRemaining} attempts remaining
+                    </span>
+                  )}
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} className="pl-10 pr-10" required />
@@ -178,6 +207,9 @@ const Auth = () => {
                   </button>
                 </div>
                 {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                {!isLogin && password && (
+                  <PasswordStrengthMeter password={password} />
+                )}
               </div>
 
               <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isLoading}>
@@ -185,19 +217,114 @@ const Auth = () => {
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <button type="button" onClick={() => {
-              setIsLogin(!isLogin);
-              setErrors({});
-            }} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-              </button>
+            <div className="mt-6 space-y-3">
+              {isLogin && (
+                <div className="text-center">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+              <div className="text-center">
+                <button type="button" onClick={() => {
+                  setIsLogin(!isLogin);
+                  setErrors({});
+                }} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+                </button>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground mt-6 animate-slide-up-delay-2">By continuing, you agree to our Terms of Service and Privacy Policy</p>
+        <div className="mt-6 space-y-3">
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <Shield className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-foreground mb-1">Security Features</p>
+              <ul className="text-xs text-muted-foreground space-y-0.5">
+                <li>• End-to-end encrypted data</li>
+                <li>• Rate limiting protection</li>
+                <li>• Secure password requirements</li>
+                <li>• Multi-factor authentication available</li>
+              </ul>
+            </div>
+          </div>
+          <p className="text-center text-xs text-muted-foreground">By continuing, you agree to our Terms of Service and Privacy Policy</p>
+        </div>
       </div>
+
+      {/* Forgot Password Dialog */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Reset Password</CardTitle>
+              <CardDescription>
+                Enter your email address and we'll send you a link to reset your password.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">Email</Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setResetEmail('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={async () => {
+                    if (!resetEmail.trim()) {
+                      toast({
+                        variant: 'destructive',
+                        title: 'Email Required',
+                        description: 'Please enter your email address.',
+                      });
+                      return;
+                    }
+                    const { error } = await resetPassword(resetEmail);
+                    if (error) {
+                      toast({
+                        variant: 'destructive',
+                        title: 'Error',
+                        description: error.message,
+                      });
+                    } else {
+                      toast({
+                        title: 'Reset Link Sent',
+                        description: 'Check your email for password reset instructions.',
+                      });
+                      setShowForgotPassword(false);
+                      setResetEmail('');
+                    }
+                  }}
+                >
+                  Send Reset Link
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>;
 };
 export default Auth;

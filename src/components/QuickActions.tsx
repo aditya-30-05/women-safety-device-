@@ -101,25 +101,35 @@ const QuickActions = () => {
   ];
 
   return (
-    <Card className="glass-card">
-      <CardHeader>
-        <CardTitle className="text-lg font-display">Quick Actions</CardTitle>
+    <Card className="glass-card border-border/50">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Share2 className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <div>Quick Actions</div>
+            <p className="text-xs text-muted-foreground font-normal mt-0.5">
+              Fast access to safety features
+            </p>
+          </div>
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {actions.map((action, index) => (
             <Button
               key={index}
               variant="ghost"
               onClick={action.onClick}
-              className="h-auto flex flex-col items-center gap-2 p-4 hover:bg-muted"
+              className="h-auto flex flex-col items-center gap-3 p-5 hover:bg-muted/80 hover:scale-105 transition-all duration-200 rounded-xl border border-transparent hover:border-border/50"
             >
-              <div className={`w-12 h-12 rounded-xl ${action.bgColor} flex items-center justify-center`}>
-                <action.icon className={`w-6 h-6 ${action.color}`} />
+              <div className={`w-14 h-14 rounded-xl ${action.bgColor} flex items-center justify-center shadow-sm transition-transform hover:scale-110`}>
+                <action.icon className={`w-7 h-7 ${action.color}`} />
               </div>
               <div className="text-center">
-                <p className="font-medium text-sm">{action.label}</p>
-                <p className="text-xs text-muted-foreground">{action.description}</p>
+                <p className="font-semibold text-sm text-foreground">{action.label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{action.description}</p>
               </div>
             </Button>
           ))}
