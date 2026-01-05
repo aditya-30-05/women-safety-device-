@@ -11,11 +11,13 @@ interface AuthContextType {
   isMFAEnabled: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   enableMFA: () => Promise<{ error: Error | null }>;
   verifyMFA: (token: string) => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
+  signInWithMagicLink: (email: string) => Promise<{ error: Error | null }>;
   checkPermission: (resource: string, action: string) => boolean;
 }
 
@@ -46,8 +48,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (profile) {
-        setUserRole((profile.role as UserRole) || 'user');
-        setIsMFAEnabled(profile.mfa_enabled || false);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const p = profile as any;
+        setUserRole((p.role as UserRole) || 'user');
+        setIsMFAEnabled(p.mfa_enabled || false);
       }
     } catch (error) {
       console.error('Error loading user security settings:', error);
@@ -60,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
           await loadUserSecuritySettings(session.user.id);
           // Log successful authentication
@@ -72,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUserRole('user');
           setIsMFAEnabled(false);
         }
-        
+
         setLoading(false);
       }
     );
@@ -81,11 +85,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
         await loadUserSecuritySettings(session.user.id);
       }
-      
+
       setLoading(false);
     });
 
@@ -101,7 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -119,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await logSecurityEvent('signup_success', null, { email }, 'low');
       clearRateLimit(rateLimitKey);
     }
-    
+
     return { error };
   };
 
@@ -137,19 +141,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (error) {
-      await logSecurityEvent('signin_failed', null, { 
-        email, 
+      await logSecurityEvent('signin_failed', null, {
+        email,
         error: error.message,
         device: getDeviceFingerprint(),
       }, 'high');
     } else {
-      await logSecurityEvent('signin_success', null, { 
+      await logSecurityEvent('signin_success', null, {
         email,
         device: getDeviceFingerprint(),
       }, 'low');
       clearRateLimit(rateLimitKey);
     }
-    
+
     return { error };
   };
 
@@ -164,7 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const enableMFA = async () => {
     if (!user) return { error: new Error('Not authenticated') };
-    
+
     try {
       // In production, this would set up TOTP
       setIsMFAEnabled(true);
@@ -178,7 +182,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const verifyMFA = async (token: string) => {
     if (!user) return { error: new Error('Not authenticated') };
-    
+
     // In production, verify TOTP token
     await logSecurityEvent('mfa_verified', user.id, {}, 'low');
     return { error: null };
@@ -188,29 +192,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth?mode=reset`,
     });
-    
+
     if (error) {
       await logSecurityEvent('password_reset_failed', null, { email }, 'medium');
     } else {
       await logSecurityEvent('password_reset_requested', null, { email }, 'low');
     }
-    
+
     return { error };
   };
 
   const updatePassword = async (newPassword: string) => {
     if (!user) return { error: new Error('Not authenticated') };
-    
+
     const { error } = await supabase.auth.updateUser({
       password: newPassword,
     });
-    
+
     if (error) {
       await logSecurityEvent('password_update_failed', user.id, {}, 'high');
     } else {
       await logSecurityEvent('password_updated', user.id, {}, 'medium');
     }
-    
+
+    return { error };
+  };
+
+  const signInWithMagicLink = async (email: string) => {
+    // Rate limiting
+    const rateLimitKey = `magiclink_${email}`;
+    if (!rateLimitCheck(rateLimitKey, 3, 60 * 60 * 1000)) {
+      await logSecurityEvent('magiclink_rate_limit', null, { email }, 'high');
+      return { error: new Error('Too many magic link attempts. Please try again later.') };
+    }
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`
+      }
+    });
+
+    if (error) {
+      await logSecurityEvent('magiclink_failed', null, { email, error: error.message }, 'medium');
+    } else {
+      await logSecurityEvent('magiclink_sent', null, { email }, 'low');
+      clearRateLimit(rateLimitKey);
+    }
+
     return { error };
   };
 
@@ -218,20 +247,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return hasPermission(userRole, resource, action);
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+
+      if (error) {
+        await logSecurityEvent('google_auth_failed', null, { error: error.message }, 'medium');
+        return { error };
+      }
+
+      return { error: null };
+    } catch (error) {
+      console.error('Google auth error:', error);
+      return { error: error as Error };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      loading, 
+    <AuthContext.Provider value={{
+      user,
+      session,
+      loading,
       userRole,
       isMFAEnabled,
-      signUp, 
-      signIn, 
+      signUp,
+      signIn,
+      signInWithGoogle,
       signOut,
       enableMFA,
       verifyMFA,
       resetPassword,
       updatePassword,
+      signInWithMagicLink,
       checkPermission,
     }}>
       {children}

@@ -18,7 +18,7 @@ export const useShakeDetection = ({
   const [isSupported, setIsSupported] = useState(false);
   const [isEnabled, setIsEnabled] = useState(enabled);
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'prompt' | 'unsupported'>('prompt');
-  
+
   const shakeTimestamps = useRef<number[]>([]);
   const lastX = useRef<number | null>(null);
   const lastY = useRef<number | null>(null);
@@ -61,10 +61,10 @@ export const useShakeDetection = ({
 
   const requestPermission = useCallback(async () => {
     // Check if DeviceMotionEvent exists and has requestPermission (iOS 13+)
-    if (typeof DeviceMotionEvent !== 'undefined' && 
-        typeof (DeviceMotionEvent as any).requestPermission === 'function') {
+    if (typeof DeviceMotionEvent !== 'undefined' &&
+      typeof (DeviceMotionEvent as unknown as { requestPermission: () => Promise<string> }).requestPermission === 'function') {
       try {
-        const permission = await (DeviceMotionEvent as any).requestPermission();
+        const permission = await (DeviceMotionEvent as unknown as { requestPermission: () => Promise<string> }).requestPermission();
         setPermissionStatus(permission as 'granted' | 'denied');
         return permission === 'granted';
       } catch (error) {
@@ -73,13 +73,13 @@ export const useShakeDetection = ({
         return false;
       }
     }
-    
+
     // For other browsers, assume permission is granted if API exists
     if (typeof DeviceMotionEvent !== 'undefined') {
       setPermissionStatus('granted');
       return true;
     }
-    
+
     setPermissionStatus('unsupported');
     return false;
   }, []);
@@ -95,7 +95,7 @@ export const useShakeDetection = ({
     }
 
     // Auto-request permission for non-iOS devices
-    if (typeof (DeviceMotionEvent as any).requestPermission !== 'function') {
+    if (typeof (DeviceMotionEvent as unknown as { requestPermission: () => Promise<string> }).requestPermission !== 'function') {
       setPermissionStatus('granted');
     }
   }, []);
@@ -104,7 +104,7 @@ export const useShakeDetection = ({
     if (!isSupported || !isEnabled || permissionStatus !== 'granted') return;
 
     window.addEventListener('devicemotion', handleMotion);
-    
+
     return () => {
       window.removeEventListener('devicemotion', handleMotion);
     };

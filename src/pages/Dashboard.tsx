@@ -42,7 +42,7 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--gradient-hero)' }}>
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Logo size="lg" className="animate-pulse mx-auto mb-4" />
           <p className="text-muted-foreground">Loading your safety dashboard...</p>
@@ -54,19 +54,19 @@ const Dashboard = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--gradient-hero)' }}>
+    <div className="min-h-screen">
       {/* Header */}
       <header className="sticky top-0 z-50 glass-card border-b-2 border-border/50 shadow-sm backdrop-blur-xl">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between max-w-7xl">
           <Logo size="md" showText={true} />
-          
+
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="rounded-full hover:bg-primary/10 transition-colors"
                   title="Account menu"
                 >
@@ -86,8 +86,8 @@ const Dashboard = () => {
                   Profile Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={handleSignOut} 
+                <DropdownMenuItem
+                  onClick={handleSignOut}
                   className="text-destructive cursor-pointer focus:text-destructive"
                 >
                   <LogOut className="w-4 h-4 mr-2" />

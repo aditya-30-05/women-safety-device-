@@ -39,7 +39,7 @@ const SilentEvidenceCollection = () => {
   const [isCollecting, setIsCollecting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
   const [autoSync, setAutoSync] = useState(true);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -259,8 +259,8 @@ const SilentEvidenceCollection = () => {
       videoStreamRef.current = stream;
 
       const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9') 
-          ? 'video/webm;codecs=vp9' 
+        mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+          ? 'video/webm;codecs=vp9'
           : 'video/webm',
       });
       videoRecorderRef.current = mediaRecorder;
@@ -396,7 +396,8 @@ const SilentEvidenceCollection = () => {
         dataToStore = evidence.data;
       }
 
-      await supabase.from('evidence_collection').insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await supabase.from('evidence_collection' as any).insert({
         user_id: user.id,
         type: evidence.type,
         data: dataToStore,

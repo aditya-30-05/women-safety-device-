@@ -71,8 +71,8 @@ export const JourneyTracking = () => {
 
     const checkTimer = () => {
       const now = new Date();
-      const nextCheckIn = activeJourney.next_check_in 
-        ? new Date(activeJourney.next_check_in) 
+      const nextCheckIn = activeJourney.next_check_in
+        ? new Date(activeJourney.next_check_in)
         : new Date(new Date(activeJourney.start_time).getTime() + activeJourney.check_in_interval * 60000);
 
       const diff = nextCheckIn.getTime() - now.getTime();
@@ -181,7 +181,7 @@ export const JourneyTracking = () => {
 
     setShowCheckInDialog(false);
     setMissedCheckIns(0);
-    
+
     toast({
       title: "Checked In!",
       description: "Your safety status has been updated.",
@@ -352,7 +352,7 @@ export const JourneyTracking = () => {
               Time to Check In!
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you safe? Tap "I'm Safe" to let your contacts know you're okay. 
+              Are you safe? Tap "I'm Safe" to let your contacts know you're okay.
               If you don't respond, an alert will be sent to your trusted contacts.
             </AlertDialogDescription>
           </AlertDialogHeader>

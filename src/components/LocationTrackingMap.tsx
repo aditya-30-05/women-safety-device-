@@ -12,6 +12,15 @@ interface Location {
   timestamp: Date;
 }
 
+// Interface for the missing table 'location_history'
+interface LocationHistoryItem {
+  id?: string;
+  user_id: string;
+  latitude: number;
+  longitude: number;
+  created_at: string;
+}
+
 const LocationTrackingMap = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -118,17 +127,17 @@ const LocationTrackingMap = () => {
           timestamp: new Date(),
         };
         setCurrentLocation(location);
-        
+
         // Save to database (optional - table may not exist yet)
         if (user) {
-          supabase
+          (supabase as any)
             .from('location_history')
             .insert({
               user_id: user.id,
               latitude: location.lat,
               longitude: location.lng,
               created_at: location.timestamp.toISOString(),
-            })
+            } as LocationHistoryItem)
             .then(({ error }) => {
               if (error && !error.message.includes('relation') && !error.message.includes('does not exist')) {
                 console.error('Error saving location:', error);
@@ -181,14 +190,14 @@ const LocationTrackingMap = () => {
 
         // Save to database (optional - table may not exist yet)
         if (user) {
-          supabase
+          (supabase as any)
             .from('location_history')
             .insert({
               user_id: user.id,
               latitude: location.lat,
               longitude: location.lng,
               created_at: location.timestamp.toISOString(),
-            })
+            } as LocationHistoryItem)
             .then(({ error }) => {
               if (error && !error.message.includes('relation') && !error.message.includes('does not exist')) {
                 console.error('Error saving location:', error);
@@ -233,7 +242,7 @@ const LocationTrackingMap = () => {
   const loadLocationHistory = useCallback(async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('location_history')
       .select('*')
       .eq('user_id', user.id)
@@ -250,7 +259,7 @@ const LocationTrackingMap = () => {
     }
 
     if (data) {
-      const locations: Location[] = data.map((item) => ({
+      const locations: Location[] = (data as LocationHistoryItem[]).map((item) => ({
         lat: item.latitude,
         lng: item.longitude,
         timestamp: new Date(item.created_at),

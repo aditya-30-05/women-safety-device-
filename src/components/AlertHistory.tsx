@@ -24,11 +24,12 @@ const AlertHistory = () => {
     if (user) {
       fetchAlerts();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchAlerts = async () => {
     if (!user) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('emergency_alerts')
@@ -84,11 +85,10 @@ const AlertHistory = () => {
                 className="flex items-center justify-between p-3 rounded-xl bg-muted/50"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    alert.status === 'active' 
-                      ? 'bg-destructive/10' 
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${alert.status === 'active'
+                      ? 'bg-destructive/10'
                       : 'bg-success/10'
-                  }`}>
+                    }`}>
                     {alert.status === 'active' ? (
                       <AlertTriangle className="w-5 h-5 text-destructive" />
                     ) : (

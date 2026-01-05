@@ -26,19 +26,36 @@ const SecuritySettings = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [securityLogs, setSecurityLogs] = useState<any[]>([]);
-  const [activeSessions, setActiveSessions] = useState<any[]>([]);
+  interface SecurityLog {
+    event_type: string;
+    user_id: string;
+    severity: string;
+    timestamp: string;
+    ip_address?: string;
+  }
+
+  interface Session {
+    id: string;
+    user_id: string;
+    device_info?: { name: string };
+    ip_address: string;
+    last_activity: string;
+  }
+
+  const [securityLogs, setSecurityLogs] = useState<SecurityLog[]>([]);
+  const [activeSessions, setActiveSessions] = useState<Session[]>([]);
 
   useEffect(() => {
     loadSecurityLogs();
     loadActiveSessions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const loadSecurityLogs = async () => {
     if (!user) return;
     try {
       const logs = JSON.parse(localStorage.getItem('security_logs') || '[]');
-      const userLogs = logs.filter((log: any) => log.user_id === user.id);
+      const userLogs = logs.filter((log: SecurityLog) => log.user_id === user.id);
       setSecurityLogs(userLogs.slice(-10).reverse()); // Last 10 logs
     } catch (error) {
       console.error('Error loading security logs:', error);
@@ -49,14 +66,14 @@ const SecuritySettings = () => {
     if (!user) return;
     try {
       const { data } = await supabase
-        .from('user_sessions')
+        .from('user_sessions' as any)
         .select('*')
         .eq('user_id', user.id)
         .gt('expires_at', new Date().toISOString())
         .order('last_activity', { ascending: false });
-      
+
       if (data) {
-        setActiveSessions(data);
+        setActiveSessions((data as unknown) as Session[]);
       }
     } catch (error) {
       console.error('Error loading sessions:', error);
@@ -148,11 +165,11 @@ const SecuritySettings = () => {
     if (!user) return;
     try {
       await supabase
-        .from('user_sessions')
+        .from('user_sessions' as any)
         .delete()
         .eq('id', sessionId)
         .eq('user_id', user.id);
-      
+
       await loadActiveSessions();
       toast({
         title: 'Session Revoked',
@@ -208,8 +225,8 @@ const SecuritySettings = () => {
                 <div>
                   <p className="font-semibold text-foreground">Multi-Factor Authentication</p>
                   <p className="text-xs text-muted-foreground">
-                    {isMFAEnabled 
-                      ? 'MFA is enabled for your account' 
+                    {isMFAEnabled
+                      ? 'MFA is enabled for your account'
                       : 'Add an extra layer of security'}
                   </p>
                 </div>

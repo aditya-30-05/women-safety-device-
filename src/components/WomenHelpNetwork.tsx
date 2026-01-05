@@ -171,7 +171,8 @@ const WomenHelpNetwork = () => {
     // Save to database (optional)
     if (user) {
       try {
-        await supabase.from('help_requests').insert({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await supabase.from('help_requests' as any).insert({
           user_id: user.id,
           type: requestType,
           title: requestTitle,
@@ -247,7 +248,7 @@ const WomenHelpNetwork = () => {
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="request-type">Type of Help Needed</Label>
-                  <Select value={requestType} onValueChange={(value: any) => setRequestType(value)}>
+                  <Select value={requestType} onValueChange={(value: 'emergency' | 'urgent' | 'support' | 'companion') => setRequestType(value)}>
                     <SelectTrigger id="request-type">
                       <SelectValue />
                     </SelectTrigger>
@@ -337,11 +338,10 @@ const WomenHelpNetwork = () => {
             {nearbyHelpers.map((helper) => (
               <div
                 key={helper.id}
-                className={`p-4 rounded-xl border transition-all ${
-                  helper.available
-                    ? 'bg-background/50 border-border hover:border-primary/30 hover:bg-background/80'
-                    : 'bg-muted/30 border-border/50 opacity-60'
-                }`}
+                className={`p-4 rounded-xl border transition-all ${helper.available
+                  ? 'bg-background/50 border-border hover:border-primary/30 hover:bg-background/80'
+                  : 'bg-muted/30 border-border/50 opacity-60'
+                  }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">

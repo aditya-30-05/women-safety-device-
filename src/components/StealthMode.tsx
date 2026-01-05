@@ -80,7 +80,7 @@ const StealthMode = () => {
     };
 
     document.title = titleMap[mode];
-    
+
     // Change favicon (if possible)
     const favicon = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
     if (favicon) {
@@ -130,7 +130,7 @@ const StealthMode = () => {
     setIsStealthActive(true);
     setShowPasswordDialog(false);
     setConfirmPassword('');
-    
+
     // Save password hash (not the actual password)
     const passwordHash = btoa(encryptionPassword);
     localStorage.setItem('encryption_password_hash', passwordHash);
@@ -141,7 +141,7 @@ const StealthMode = () => {
     });
   };
 
-  const encryptSOSData = async (data: any) => {
+  const encryptSOSData = async (data: Record<string, unknown>) => {
     if (!encryptionPassword) {
       toast({
         variant: 'destructive',
@@ -208,13 +208,13 @@ const StealthMode = () => {
         });
         return;
       }
-      
+
       const encrypted = await EncryptionService.encrypt(testData, password);
       setEncryptedData(encrypted);
-      
+
       const decrypted = await EncryptionService.decrypt(encrypted, password);
       setDecryptedData(decrypted);
-      
+
       toast({
         title: 'Encryption Test Successful',
         description: 'Data encrypted and decrypted successfully.',
@@ -286,9 +286,8 @@ const StealthMode = () => {
           <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                  isStealthActive ? 'bg-red-500/20 border-2 border-red-500/30' : 'bg-muted border-2 border-border'
-                }`}>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isStealthActive ? 'bg-red-500/20 border-2 border-red-500/30' : 'bg-muted border-2 border-border'
+                  }`}>
                   {isStealthActive ? (
                     <EyeOff className="h-6 w-6 text-red-500" />
                   ) : (
@@ -377,7 +376,7 @@ const StealthMode = () => {
             <p className="text-xs text-muted-foreground mb-4">
               Set a password to encrypt all SOS data. This password is required to decrypt data.
             </p>
-            
+
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="encryption-password">Encryption Password</Label>
@@ -418,7 +417,7 @@ const StealthMode = () => {
               <div className="flex items-center gap-2 p-3 rounded-lg bg-background/50 border border-border/50">
                 <Key className="h-4 w-4 text-primary" />
                 <p className="text-xs text-muted-foreground flex-1">
-                  <strong className="text-foreground">Important:</strong> Store this password securely. 
+                  <strong className="text-foreground">Important:</strong> Store this password securely.
                   You cannot recover encrypted data without it.
                 </p>
               </div>
@@ -485,7 +484,7 @@ const StealthMode = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Activate Stealth Mode</AlertDialogTitle>
             <AlertDialogDescription>
-              Please confirm your encryption password to activate stealth mode. 
+              Please confirm your encryption password to activate stealth mode.
               The app will be disguised and all SOS data will be encrypted.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -22,7 +22,7 @@ const Profile = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  
+
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -37,11 +37,12 @@ const Profile = () => {
     if (user) {
       fetchProfile();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchProfile = async () => {
     if (!user) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -50,7 +51,7 @@ const Profile = () => {
         .maybeSingle();
 
       if (error) throw error;
-      
+
       if (data) {
         setProfile(data);
         setFullName(data.full_name);
@@ -65,9 +66,9 @@ const Profile = () => {
 
   const handleSave = async () => {
     if (!user || !profile) return;
-    
+
     setIsSaving(true);
-    
+
     try {
       const { error } = await supabase
         .from('profiles')

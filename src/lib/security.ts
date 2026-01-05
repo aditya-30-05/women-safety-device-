@@ -42,7 +42,7 @@ export const validatePasswordStrength = (password: string): PasswordStrength => 
   }
 
   // Special character check
-  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+  if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
     score += 1;
   } else {
     feedback.push('Add special characters (!@#$%^&*)');
@@ -85,7 +85,7 @@ export const getDeviceFingerprint = (): string => {
   const ctx = canvas.getContext('2d');
   ctx?.fillText('Device fingerprint', 2, 2);
   const canvasFingerprint = canvas.toDataURL();
-  
+
   const fingerprint = [
     navigator.userAgent,
     navigator.language,
@@ -93,7 +93,7 @@ export const getDeviceFingerprint = (): string => {
     new Date().getTimezoneOffset(),
     canvasFingerprint,
   ].join('|');
-  
+
   return btoa(fingerprint);
 };
 
@@ -101,14 +101,14 @@ export const rateLimitCheck = (key: string, maxAttempts: number = 5, windowMs: n
   const storageKey = `rate_limit_${key}`;
   const now = Date.now();
   const attempts = JSON.parse(localStorage.getItem(storageKey) || '[]') as number[];
-  
+
   // Remove old attempts outside the window
   const recentAttempts = attempts.filter(timestamp => now - timestamp < windowMs);
-  
+
   if (recentAttempts.length >= maxAttempts) {
     return false; // Rate limit exceeded
   }
-  
+
   // Add current attempt
   recentAttempts.push(now);
   localStorage.setItem(storageKey, JSON.stringify(recentAttempts));
@@ -130,7 +130,7 @@ export const getRateLimitRemaining = (key: string, maxAttempts: number = 5, wind
 export const logSecurityEvent = async (
   eventType: string,
   userId: string | null,
-  details: Record<string, any>,
+  details: Record<string, unknown>,
   severity: 'low' | 'medium' | 'high' | 'critical' = 'medium'
 ) => {
   const event = {
@@ -210,15 +210,15 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
 
 export const hasPermission = (userRole: UserRole, resource: string, action: string): boolean => {
   const permissions = rolePermissions[userRole] || [];
-  
+
   // Admin has all permissions
   if (userRole === 'admin') {
     return true;
   }
-  
+
   return permissions.some(
     perm => (perm.resource === resource || perm.resource === '*') &&
-            (perm.action === action || perm.action === '*')
+      (perm.action === action || perm.action === '*')
   );
 };
 

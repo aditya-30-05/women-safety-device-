@@ -37,7 +37,7 @@ const TrustedContacts = () => {
     relationship: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
+
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -45,11 +45,12 @@ const TrustedContacts = () => {
     if (user) {
       fetchContacts();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchContacts = async () => {
     if (!user) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('trusted_contacts')

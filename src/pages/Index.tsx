@@ -17,7 +17,7 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--gradient-hero)' }}>
+      <div className="min-h-screen flex items-center justify-center">
         <Logo size="lg" className="animate-pulse" />
       </div>
     );
@@ -49,7 +49,7 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--gradient-hero)' }}>
+    <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="container mx-auto px-4 pt-12 pb-20">
@@ -65,21 +65,21 @@ const Index = () => {
               <span className="gradient-text">Our Priority</span>
             </h1>
             <p className="text-lg text-muted-foreground mb-8 animate-slide-up-delay-1">
-              SafeHer is your personal safety companion. Send instant SOS alerts, 
+              SafeHer is your personal safety companion. Send instant SOS alerts,
               share your live location, and stay connected with your trusted circle.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 animate-slide-up-delay-2">
-              <Button 
-                variant="hero" 
-                size="xl" 
+              <Button
+                variant="hero"
+                size="xl"
                 onClick={() => navigate('/auth')}
                 className="group"
               >
                 Get Started Free
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="xl"
                 onClick={() => navigate('/auth')}
               >
@@ -108,7 +108,7 @@ const Index = () => {
 
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {features.map((feature, index) => (
-              <div 
+              <div
                 key={index}
                 className="glass-card p-6 rounded-2xl hover:shadow-medium transition-shadow"
               >
@@ -136,7 +136,7 @@ const Index = () => {
             </h2>
             <div className="space-y-4">
               {safetyTips.map((tip, index) => (
-                <div 
+                <div
                   key={index}
                   className="flex items-start gap-4 p-4 rounded-xl bg-success/5 border border-success/20"
                 >
@@ -152,17 +152,17 @@ const Index = () => {
       {/* CTA Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="glass-card rounded-3xl p-8 md:p-12 text-center max-w-3xl mx-auto" 
-               style={{ background: 'var(--gradient-primary)' }}>
+          <div className="glass-card rounded-3xl p-8 md:p-12 text-center max-w-3xl mx-auto"
+            style={{ background: 'var(--gradient-primary)' }}>
             <h2 className="text-3xl md:text-4xl font-display font-bold text-primary-foreground mb-4">
               Ready to Feel Safer?
             </h2>
             <p className="text-primary-foreground/80 mb-8 max-w-xl mx-auto">
-              Join thousands of women who trust SafeHer for their personal safety. 
+              Join thousands of women who trust SafeHer for their personal safety.
               It's free, simple, and could save your life.
             </p>
-            <Button 
-              variant="secondary" 
+            <Button
+              variant="secondary"
               size="xl"
               onClick={() => navigate('/auth')}
               className="bg-card text-primary hover:bg-card/90"

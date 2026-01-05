@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
 
 @layer base {
   :root {
@@ -131,9 +131,16 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
+    background: var(--gradient-hero);
+    min-height: 100vh;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Outfit', sans-serif;
     @apply font-semibold tracking-tight;
   }
@@ -189,18 +196,24 @@
 }
 
 @keyframes sos-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 hsla(0, 85%, 55%, 0.4);
   }
+
   50% {
     box-shadow: 0 0 0 20px hsla(0, 85%, 55%, 0);
   }
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-10px);
   }
@@ -211,6 +224,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -236,19 +250,4 @@
   opacity: 0;
 }
 
-/* Stealth Mode Disguises */
-.disguise-calculator {
-  /* Calculator theme - neutral colors */
-}
-
-.disguise-notes {
-  /* Notes app theme - clean, minimal */
-}
-
-.disguise-music {
-  /* Music player theme - dark, modern */
-}
-
-.disguise-settings {
-  /* Settings theme - system-like */
-}
+/* Stealth Mode Disguises - Classes used in StealthMode.tsx */
