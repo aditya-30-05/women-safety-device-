@@ -65,6 +65,31 @@ export const JourneyTracking = () => {
     fetchActiveJourney();
   }, [fetchActiveJourney]);
 
+  const triggerMissedCheckInAlert = useCallback(async () => {
+    if (!user) return;
+
+    // Update journey status to alert
+    await supabase
+      .from('journeys')
+      .update({ status: 'alert' })
+      .eq('id', activeJourney?.id);
+
+    // Create emergency alert
+    await supabase.from('emergency_alerts').insert({
+      user_id: user.id,
+      alert_type: 'missed_checkin',
+      status: 'active',
+    });
+
+    toast({
+      title: "Alert Triggered!",
+      description: "Your trusted contacts have been notified due to missed check-in.",
+      variant: "destructive",
+    });
+
+    fetchActiveJourney();
+  }, [user, activeJourney?.id, fetchActiveJourney]);
+
   // Check-in timer logic
   useEffect(() => {
     if (!activeJourney || activeJourney.status !== 'active') return;
@@ -94,32 +119,7 @@ export const JourneyTracking = () => {
     const interval = setInterval(checkTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [activeJourney, missedCheckIns]);
-
-  const triggerMissedCheckInAlert = async () => {
-    if (!user) return;
-
-    // Update journey status to alert
-    await supabase
-      .from('journeys')
-      .update({ status: 'alert' })
-      .eq('id', activeJourney?.id);
-
-    // Create emergency alert
-    await supabase.from('emergency_alerts').insert({
-      user_id: user.id,
-      alert_type: 'missed_checkin',
-      status: 'active',
-    });
-
-    toast({
-      title: "Alert Triggered!",
-      description: "Your trusted contacts have been notified due to missed check-in.",
-      variant: "destructive",
-    });
-
-    fetchActiveJourney();
-  };
+  }, [activeJourney, missedCheckIns, triggerMissedCheckInAlert]);
 
   const startJourney = async () => {
     if (!user || !destination.trim()) {

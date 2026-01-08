@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +48,74 @@ const SilentEvidenceCollection = () => {
   const videoStreamRef = useRef<MediaStream | null>(null);
   const videoRecorderRef = useRef<MediaRecorder | null>(null);
 
+  const loadEvidenceFromStorage = useCallback(() => {
+    try {
+      const stored = localStorage.getItem('silent_evidence');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setEvidenceList(parsed);
+      }
+    } catch (error) {
+      console.error('Error loading evidence:', error);
+    }
+  }, []);
+
+  const syncSingleEvidence = useCallback(async (evidence: EvidenceItem) => {
+    if (!user) return;
+
+    try {
+      // Convert Blob to base64 for storage
+      let dataToStore: string | null = null;
+      if (evidence.data instanceof Blob) {
+        const reader = new FileReader();
+        dataToStore = await new Promise<string>((resolve, reject) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(evidence.data as Blob);
+        });
+      } else if (typeof evidence.data === 'object') {
+        dataToStore = JSON.stringify(evidence.data);
+      } else {
+        dataToStore = evidence.data as string;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await supabase.from('evidence_collection' as any).insert({
+        user_id: user.id,
+        type: evidence.type,
+        data: dataToStore,
+        latitude: evidence.location?.lat,
+        longitude: evidence.location?.lng,
+        synced: true,
+        created_at: evidence.timestamp,
+      });
+
+      setEvidenceList(prev => prev.map(e =>
+        e.id === evidence.id ? { ...e, synced: true } : e
+      ));
+    } catch (error) {
+      console.error('Error syncing evidence:', error);
+    }
+  }, [user]);
+
+  const syncEvidence = useCallback(async () => {
+    if (!user || isOfflineMode) return;
+
+    const unsynced = evidenceList.filter(e => !e.synced);
+    if (unsynced.length === 0) return;
+
+    setIsCollecting(true);
+    try {
+      for (const evidence of unsynced) {
+        await syncSingleEvidence(evidence);
+      }
+    } catch (error) {
+      console.error('Sync error:', error);
+    } finally {
+      setIsCollecting(false);
+    }
+  }, [user, isOfflineMode, evidenceList, syncSingleEvidence]);
+
   // Check online/offline status
   useEffect(() => {
     const handleOnline = () => {
@@ -68,24 +136,13 @@ const SilentEvidenceCollection = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [autoSync]);
+  }, [autoSync, syncEvidence]);
 
   // Load evidence from local storage
   useEffect(() => {
     loadEvidenceFromStorage();
-  }, []);
+  }, [loadEvidenceFromStorage]);
 
-  const loadEvidenceFromStorage = () => {
-    try {
-      const stored = localStorage.getItem('silent_evidence');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setEvidenceList(parsed);
-      }
-    } catch (error) {
-      console.error('Error loading evidence:', error);
-    }
-  };
 
   const saveEvidenceToStorage = (evidence: EvidenceItem[]) => {
     try {
@@ -377,78 +434,7 @@ const SilentEvidenceCollection = () => {
     }
   };
 
-  const syncSingleEvidence = async (evidence: EvidenceItem) => {
-    if (!user) return;
 
-    try {
-      // Convert Blob to base64 for storage
-      let dataToStore: string | null = null;
-      if (evidence.data instanceof Blob) {
-        const reader = new FileReader();
-        dataToStore = await new Promise<string>((resolve, reject) => {
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(evidence.data as Blob);
-        });
-      } else if (typeof evidence.data === 'object') {
-        dataToStore = JSON.stringify(evidence.data);
-      } else {
-        dataToStore = evidence.data;
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await supabase.from('evidence_collection' as any).insert({
-        user_id: user.id,
-        type: evidence.type,
-        data: dataToStore,
-        latitude: evidence.location?.lat,
-        longitude: evidence.location?.lng,
-        synced: true,
-        created_at: evidence.timestamp,
-      });
-
-      // Update local evidence as synced
-      const updated = evidenceList.map(e =>
-        e.id === evidence.id ? { ...e, synced: true } : e
-      );
-      setEvidenceList(updated);
-      saveEvidenceToStorage(updated);
-    } catch (error) {
-      console.error('Error syncing evidence:', error);
-    }
-  };
-
-  const syncEvidence = async () => {
-    if (!user || isOfflineMode) return;
-
-    const unsynced = evidenceList.filter(e => !e.synced);
-    if (unsynced.length === 0) {
-      toast({
-        title: 'All Synced',
-        description: 'All evidence is already synced.',
-      });
-      return;
-    }
-
-    setIsCollecting(true);
-    try {
-      for (const evidence of unsynced) {
-        await syncSingleEvidence(evidence);
-      }
-      toast({
-        title: 'Sync Complete',
-        description: `${unsynced.length} items synced successfully.`,
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Sync Error',
-        description: 'Some items failed to sync. They will be synced when online.',
-      });
-    } finally {
-      setIsCollecting(false);
-    }
-  };
 
   const deleteEvidence = (id: string) => {
     const updated = evidenceList.filter(e => e.id !== id);

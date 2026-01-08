@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, MapPin, RefreshCw, Info, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { GoogleMap, useJsApiLoader, Marker, Circle } from '@react-google-maps/api';
 
 interface UnsafeZone {
   id: string;
@@ -18,7 +19,6 @@ interface UnsafeZone {
   reportCount: number;
 }
 
-// Sample unsafe zones data (in production, this would come from an API)
 const sampleUnsafeZones: UnsafeZone[] = [
   {
     id: '1',
@@ -55,41 +55,43 @@ const sampleUnsafeZones: UnsafeZone[] = [
   },
 ];
 
+const mapContainerStyle = {
+  width: '100%',
+  height: '100%'
+};
+
+const defaultCenter = { lat: 28.6139, lng: 77.2090 };
+
+const severityColors = {
+  low: '#fbbf24',
+  medium: '#f97316',
+  high: '#ef4444',
+  critical: '#dc2626',
+};
+
+const severityOpacities = {
+  low: 0.2,
+  medium: 0.3,
+  high: 0.4,
+  critical: 0.5,
+};
+
 const UnsafeZoneMap = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [mapError, setMapError] = useState<string | null>(null);
   const [unsafeZones, setUnsafeZones] = useState<UnsafeZone[]>(sampleUnsafeZones);
   const [selectedZone, setSelectedZone] = useState<UnsafeZone | null>(null);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const circlesRef = useRef<google.maps.Circle[]>([]);
-  const markersRef = useRef<google.maps.Marker[]>([]);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
 
-  // Load Google Maps script
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}&libraries=places,drawing`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => setMapLoaded(true);
-    script.onerror = () => {
-      setMapError('Failed to load Google Maps. Please check your API key.');
-      toast({
-        variant: 'destructive',
-        title: 'Map Error',
-        description: 'Failed to load Google Maps. Please check your API key configuration.',
-      });
-    };
-    document.head.appendChild(script);
+  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const isPlaceholderKey = !googleMapsApiKey || googleMapsApiKey === 'your_google_maps_api_key_here';
 
-    return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
-      }
-    };
-  }, [toast]);
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: 'google-map-script-unsafe',
+    googleMapsApiKey: isPlaceholderKey ? '' : googleMapsApiKey,
+    libraries: ['places', 'drawing'] as any[]
+  });
 
   // Get current location
   useEffect(() => {
@@ -102,119 +104,15 @@ const UnsafeZoneMap = () => {
           });
         },
         () => {
-          // Use default location if geolocation fails
-          setCurrentLocation({ lat: 28.6139, lng: 77.2090 });
+          setCurrentLocation(defaultCenter);
         }
       );
     } else {
-      setCurrentLocation({ lat: 28.6139, lng: 77.2090 });
+      setCurrentLocation(defaultCenter);
     }
   }, []);
 
-  // Initialize map and draw unsafe zones
-  useEffect(() => {
-    if (!mapLoaded || mapError || !currentLocation) return;
 
-    const mapElement = document.getElementById('unsafe-zone-map');
-    if (!mapElement) return;
-
-    const map = new google.maps.Map(mapElement, {
-      zoom: 13,
-      center: currentLocation,
-      mapTypeControl: true,
-      streetViewControl: false,
-      fullscreenControl: true,
-      styles: [
-        {
-          featureType: 'poi',
-          elementType: 'labels',
-          stylers: [{ visibility: 'off' }],
-        },
-      ],
-    });
-
-    mapRef.current = map;
-
-    // Clear existing circles and markers
-    circlesRef.current.forEach(circle => circle.setMap(null));
-    markersRef.current.forEach(marker => marker.setMap(null));
-    circlesRef.current = [];
-    markersRef.current = [];
-
-    // Draw unsafe zones
-    unsafeZones.forEach((zone) => {
-      const severityColors = {
-        low: '#fbbf24', // yellow
-        medium: '#f97316', // orange
-        high: '#ef4444', // red
-        critical: '#dc2626', // dark red
-      };
-
-      const severityOpacities = {
-        low: 0.2,
-        medium: 0.3,
-        high: 0.4,
-        critical: 0.5,
-      };
-
-      // Draw circle for unsafe zone
-      const circle = new google.maps.Circle({
-        strokeColor: severityColors[zone.severity],
-        strokeOpacity: 0.8,
-        strokeWeight: 2,
-        fillColor: severityColors[zone.severity],
-        fillOpacity: severityOpacities[zone.severity],
-        map: map,
-        center: { lat: zone.lat, lng: zone.lng },
-        radius: zone.radius,
-      });
-
-      circlesRef.current.push(circle);
-
-      // Add marker for unsafe zone
-      const marker = new google.maps.Marker({
-        position: { lat: zone.lat, lng: zone.lng },
-        map: map,
-        title: zone.name,
-        icon: {
-          path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-          scale: 6,
-          fillColor: severityColors[zone.severity],
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeWeight: 2,
-        },
-      });
-
-      // Add click listener to marker
-      marker.addListener('click', () => {
-        setSelectedZone(zone);
-        map.setCenter({ lat: zone.lat, lng: zone.lng });
-        map.setZoom(15);
-      });
-
-      markersRef.current.push(marker);
-    });
-
-    // Add current location marker
-    if (currentLocation) {
-      const currentMarker = new google.maps.Marker({
-        position: currentLocation,
-        map: map,
-        title: 'Your Location',
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: '#3b82f6',
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeWeight: 2,
-        },
-        zIndex: 1000,
-      });
-      markersRef.current.push(currentMarker);
-    }
-  }, [mapLoaded, mapError, currentLocation, unsafeZones]);
 
   const getSeverityBadge = (severity: string) => {
     const variants = {
@@ -232,7 +130,7 @@ const UnsafeZoneMap = () => {
     };
 
     return (
-      <Badge 
+      <Badge
         variant={variants[severity as keyof typeof variants] || 'default'}
         className={colors[severity as keyof typeof colors] || ''}
       >
@@ -267,18 +165,90 @@ const UnsafeZoneMap = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {mapError ? (
+        {loadError || isPlaceholderKey ? (
           <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-center">
-            <p className="text-sm text-destructive">{mapError}</p>
+            <p className="text-sm text-destructive">
+              {loadError ? 'Failed to load Google Maps intelligence' : 'Google Maps API Key Required'}
+            </p>
             <p className="text-xs text-muted-foreground mt-2">
-              Please add VITE_GOOGLE_MAPS_API_KEY to your .env file
+              {isPlaceholderKey
+                ? 'Please add your VITE_GOOGLE_MAPS_API_KEY to the .env file to enable the interactive map intelligence.'
+                : 'Please check your API key and billing status in Google Cloud Console.'}
             </p>
           </div>
         ) : (
           <>
             <div className="relative w-full h-80 md:h-96 rounded-xl overflow-hidden border-2 border-border shadow-sm">
-              <div id="unsafe-zone-map" className="w-full h-full" />
-              {!mapLoaded && (
+              {isLoaded && currentLocation ? (
+                <GoogleMap
+                  mapContainerStyle={mapContainerStyle}
+                  center={currentLocation}
+                  zoom={13}
+                  onLoad={map => setMap(map)}
+                  options={{
+                    mapTypeControl: true,
+                    streetViewControl: false,
+                    fullscreenControl: true,
+                    styles: [
+                      {
+                        featureType: 'poi',
+                        elementType: 'labels',
+                        stylers: [{ visibility: 'off' }],
+                      },
+                    ],
+                  }}
+                >
+                  {/* Draw unsafe zones */}
+                  {unsafeZones.map((zone) => (
+                    <div key={zone.id}>
+                      <Circle
+                        center={{ lat: zone.lat, lng: zone.lng }}
+                        radius={zone.radius}
+                        options={{
+                          strokeColor: severityColors[zone.severity],
+                          strokeOpacity: 0.8,
+                          strokeWeight: 2,
+                          fillColor: severityColors[zone.severity],
+                          fillOpacity: severityOpacities[zone.severity],
+                        }}
+                      />
+                      <Marker
+                        position={{ lat: zone.lat, lng: zone.lng }}
+                        title={zone.name}
+                        onClick={() => {
+                          setSelectedZone(zone);
+                          if (map) {
+                            map.panTo({ lat: zone.lat, lng: zone.lng });
+                            map.setZoom(15);
+                          }
+                        }}
+                        icon={{
+                          path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                          scale: 6,
+                          fillColor: severityColors[zone.severity],
+                          fillOpacity: 1,
+                          strokeColor: '#ffffff',
+                          strokeWeight: 2,
+                        }}
+                      />
+                    </div>
+                  ))}
+
+                  {/* Current Location Marker */}
+                  <Marker
+                    position={currentLocation}
+                    title="Your Location"
+                    icon={{
+                      path: google.maps.SymbolPath.CIRCLE,
+                      scale: 8,
+                      fillColor: '#3b82f6',
+                      fillOpacity: 1,
+                      strokeColor: '#ffffff',
+                      strokeWeight: 2,
+                    }}
+                  />
+                </GoogleMap>
+              ) : (
                 <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/80 to-muted/50 backdrop-blur-sm">
                   <div className="text-center">
                     <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-primary" />
@@ -362,9 +332,9 @@ const UnsafeZoneMap = () => {
                   key={zone.id}
                   onClick={() => {
                     setSelectedZone(zone);
-                    if (mapRef.current) {
-                      mapRef.current.setCenter({ lat: zone.lat, lng: zone.lng });
-                      mapRef.current.setZoom(15);
+                    if (map) {
+                      map.panTo({ lat: zone.lat, lng: zone.lng });
+                      map.setZoom(15);
                     }
                   }}
                   className="p-3 rounded-lg bg-background/50 border border-border/50 hover:bg-background/80 hover:border-primary/30 cursor-pointer transition-all"

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,14 +20,7 @@ const AlertHistory = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  useEffect(() => {
-    if (user) {
-      fetchAlerts();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  const fetchAlerts = async () => {
+  const fetchAlerts = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -45,7 +38,13 @@ const AlertHistory = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchAlerts();
+    }
+  }, [user, fetchAlerts]);
 
   if (isLoading) {
     return (
@@ -86,8 +85,8 @@ const AlertHistory = () => {
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${alert.status === 'active'
-                      ? 'bg-destructive/10'
-                      : 'bg-success/10'
+                    ? 'bg-destructive/10'
+                    : 'bg-success/10'
                     }`}>
                     {alert.status === 'active' ? (
                       <AlertTriangle className="w-5 h-5 text-destructive" />

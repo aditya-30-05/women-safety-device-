@@ -5,6 +5,7 @@ import { MapPin, Navigation, RefreshCw, History, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
 interface Location {
   lat: number;
@@ -12,7 +13,6 @@ interface Location {
   timestamp: Date;
 }
 
-// Interface for the missing table 'location_history'
 interface LocationHistoryItem {
   id?: string;
   user_id: string;
@@ -21,93 +21,41 @@ interface LocationHistoryItem {
   created_at: string;
 }
 
+const mapContainerStyle = {
+  width: '100%',
+  height: '100%'
+};
+
+const defaultCenter = { lat: 28.6139, lng: 77.2090 };
+
 const LocationTrackingMap = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [isTracking, setIsTracking] = useState(false);
   const [locationHistory, setLocationHistory] = useState<Location[]>([]);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [mapError, setMapError] = useState<string | null>(null);
   const watchIdRef = useRef<number | null>(null);
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
 
-  // Load Google Maps script
+  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const isPlaceholderKey = !googleMapsApiKey || googleMapsApiKey === 'your_google_maps_api_key_here';
+
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: isPlaceholderKey ? '' : googleMapsApiKey,
+    libraries: ['places'] as any[]
+  });
+
+  const onUnmount = useCallback(function callback(map: google.maps.Map) {
+    setMap(null);
+  }, []);
+
+  // Update map center when location changes
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => setMapLoaded(true);
-    script.onerror = () => {
-      setMapError('Failed to load Google Maps. Please check your API key.');
-      toast({
-        variant: 'destructive',
-        title: 'Map Error',
-        description: 'Failed to load Google Maps. Please check your API key configuration.',
-      });
-    };
-    document.head.appendChild(script);
-
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, [toast]);
-
-  // Initialize map
-  useEffect(() => {
-    if (!mapLoaded || mapError) return;
-
-    const mapElement = document.getElementById('location-map');
-    if (!mapElement) return;
-
-    const map = new google.maps.Map(mapElement, {
-      zoom: 15,
-      center: currentLocation || { lat: 28.6139, lng: 77.2090 }, // Default to Delhi, India
-      mapTypeControl: true,
-      streetViewControl: false,
-      fullscreenControl: true,
-      styles: [
-        {
-          featureType: 'poi',
-          elementType: 'labels',
-          stylers: [{ visibility: 'off' }],
-        },
-      ],
-    });
-
-    mapRef.current = map;
-
-    if (currentLocation) {
-      const marker = new google.maps.Marker({
-        position: currentLocation,
-        map: map,
-        title: 'Your Location',
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: '#ef4444',
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeWeight: 2,
-        },
-        animation: google.maps.Animation.DROP,
-      });
-
-      markerRef.current = marker;
+    if (map && currentLocation) {
+      map.panTo({ lat: currentLocation.lat, lng: currentLocation.lng });
     }
-  }, [mapLoaded, mapError, currentLocation]);
-
-  // Update marker position when location changes
-  useEffect(() => {
-    if (markerRef.current && currentLocation) {
-      markerRef.current.setPosition(currentLocation);
-      if (mapRef.current) {
-        mapRef.current.setCenter(currentLocation);
-      }
-    }
-  }, [currentLocation]);
+  }, [currentLocation, map]);
 
   const getCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -288,18 +236,55 @@ const LocationTrackingMap = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {mapError ? (
+        {loadError || isPlaceholderKey ? (
           <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-center">
-            <p className="text-sm text-destructive">{mapError}</p>
+            <p className="text-sm text-destructive">
+              {loadError ? 'Failed to load Google Maps' : 'Google Maps API Key Required'}
+            </p>
             <p className="text-xs text-muted-foreground mt-2">
-              Please add VITE_GOOGLE_MAPS_API_KEY to your .env file
+              {isPlaceholderKey
+                ? 'Please add your VITE_GOOGLE_MAPS_API_KEY to the .env file to enable tracking maps.'
+                : 'Please check your API key and billing status in Google Cloud Console.'}
             </p>
           </div>
         ) : (
           <>
             <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden border-2 border-border shadow-sm">
-              <div id="location-map" className="w-full h-full" />
-              {!mapLoaded && (
+              {isLoaded ? (
+                <GoogleMap
+                  mapContainerStyle={mapContainerStyle}
+                  center={currentLocation || defaultCenter}
+                  zoom={15}
+                  onLoad={map => setMap(map)}
+                  onUnmount={onUnmount}
+                  options={{
+                    mapTypeControl: true,
+                    streetViewControl: false,
+                    fullscreenControl: true,
+                    styles: [
+                      {
+                        featureType: 'poi',
+                        elementType: 'labels',
+                        stylers: [{ visibility: 'off' }],
+                      },
+                    ],
+                  }}
+                >
+                  {currentLocation && (
+                    <Marker
+                      position={currentLocation}
+                      icon={{
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 8,
+                        fillColor: '#ef4444',
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 2,
+                      }}
+                    />
+                  )}
+                </GoogleMap>
+              ) : (
                 <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/80 to-muted/50 backdrop-blur-sm">
                   <div className="text-center">
                     <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-primary" />
@@ -359,7 +344,7 @@ const LocationTrackingMap = () => {
                 <Button
                   onClick={getCurrentLocation}
                   variant="outline"
-                  disabled={!mapLoaded}
+                  disabled={!isLoaded}
                   className="h-11 px-4"
                   title="Refresh location"
                 >
@@ -369,7 +354,7 @@ const LocationTrackingMap = () => {
                 <Button
                   onClick={loadLocationHistory}
                   variant="outline"
-                  disabled={!mapLoaded}
+                  disabled={!isLoaded}
                   className="h-11 px-4"
                   title="View location history"
                 >

@@ -44,7 +44,9 @@ Frontend (React + TS)
    |
    |── AuthContext (Security Layer)
    |── Pages & UI Components
-   |
+   |--- src/components 
+   |--- src/pages 
+               
 Backend
    ├── Supabase (Database & Auth)
    ├── Location History Tracking
@@ -74,3 +76,7 @@ To enable location tracking with Google Maps:
 3. The map will automatically load when the API key is configured.
 
 **Note:** The app will work without the API key, but the map visualization will not be available.
+
+
+
+ 

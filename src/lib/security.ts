@@ -157,10 +157,17 @@ export const logSecurityEvent = async (
 
 const getClientIP = async (): Promise<string> => {
   try {
-    const response = await fetch('https://api.ipify.org?format=json');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    const response = await fetch('https://api.ipify.org?format=json', {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
     const data = await response.json();
     return data.ip || 'unknown';
-  } catch {
+  } catch (error) {
+    console.warn('Failed to fetch IP address:', error);
     return 'unknown';
   }
 };

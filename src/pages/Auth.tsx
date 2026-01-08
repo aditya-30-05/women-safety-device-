@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { Eye, EyeOff, Mail, Lock, User, Shield, AlertTriangle } from 'lucide-rea
 import Logo from '@/components/Logo';
 import { PasswordStrengthMeter } from '@/components/PasswordStrengthMeter';
 import { validatePasswordStrength, getRateLimitRemaining } from '@/lib/security';
+import { seedDemoData } from '@/lib/demo-seed';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -39,6 +41,7 @@ const Auth = () => {
   const [isMagicLink, setIsMagicLink] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const {
+
     signIn,
     signInWithGoogle,
     signInWithMagicLink,
@@ -317,6 +320,59 @@ const Auth = () => {
                   >
                     {isMagicLink ? 'Use Password Login' : 'Use Magic Link (Passwordless)'}
                   </button>
+                </div>
+                <div className="pt-4 mt-4 border-t border-border/50">
+                  <p className="text-xs text-muted-foreground mb-3 font-medium uppercase tracking-wider">Quick Access</p>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full bg-primary/10 hover:bg-primary/20 text-primary border-primary/20"
+                    onClick={async () => {
+                      setIsLoading(true);
+                      const demoEmail = 'demo@example.com';
+                      const demoPassword = 'SafeHerDemo123!';
+                      const demoName = 'SafeHer Demo User';
+
+                      let { error } = await signIn(demoEmail, demoPassword);
+
+                      // If account doesn't exist, create it automatically
+                      if (error && error.message.toLowerCase().includes('invalid login credentials')) {
+                        const { error: signUpError } = await signUp(demoEmail, demoPassword, demoName);
+                        if (!signUpError) {
+                          const { error: secondSignInError } = await signIn(demoEmail, demoPassword);
+                          error = secondSignInError;
+                        } else {
+                          error = signUpError;
+                        }
+                      }
+
+                      if (error) {
+                        toast({
+                          variant: "destructive",
+                          title: "Demo Login Failed",
+                          description: error.message
+                        });
+                        setEmail(demoEmail);
+                        setPassword(demoPassword);
+                      } else {
+                        const { data: { user: sessionUser } } = await supabase.auth.getUser();
+                        if (sessionUser) {
+                          await seedDemoData(sessionUser.id);
+                        }
+
+                        toast({
+                          title: "Welcome to SafeHer Demo",
+                          description: "The demo environment is ready."
+                        });
+                        navigate('/dashboard');
+                      }
+                      setIsLoading(false);
+                    }}
+                    disabled={isLoading}
+                  >
+                    <Shield className="w-4 h-4 mr-2" />
+                    Sign In as Demo User
+                  </Button>
                 </div>
               </div>
             )}

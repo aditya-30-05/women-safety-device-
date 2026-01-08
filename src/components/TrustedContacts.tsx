@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, User, Phone, Mail, Star } from 'lucide-react';
 import { z } from 'zod';
+
 
 interface Contact {
   id: string;
@@ -41,14 +42,7 @@ const TrustedContacts = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (user) {
-      fetchContacts();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  const fetchContacts = async () => {
+  const fetchContacts = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -65,7 +59,13 @@ const TrustedContacts = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchContacts();
+    }
+  }, [user, fetchContacts]);
 
   const addContact = async () => {
     if (!user) return;

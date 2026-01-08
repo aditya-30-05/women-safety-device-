@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -45,13 +45,7 @@ const SecuritySettings = () => {
   const [securityLogs, setSecurityLogs] = useState<SecurityLog[]>([]);
   const [activeSessions, setActiveSessions] = useState<Session[]>([]);
 
-  useEffect(() => {
-    loadSecurityLogs();
-    loadActiveSessions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  const loadSecurityLogs = async () => {
+  const loadSecurityLogs = useCallback(async () => {
     if (!user) return;
     try {
       const logs = JSON.parse(localStorage.getItem('security_logs') || '[]');
@@ -60,9 +54,9 @@ const SecuritySettings = () => {
     } catch (error) {
       console.error('Error loading security logs:', error);
     }
-  };
+  }, [user]);
 
-  const loadActiveSessions = async () => {
+  const loadActiveSessions = useCallback(async () => {
     if (!user) return;
     try {
       const { data } = await supabase
@@ -78,7 +72,12 @@ const SecuritySettings = () => {
     } catch (error) {
       console.error('Error loading sessions:', error);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadSecurityLogs();
+    loadActiveSessions();
+  }, [user, loadSecurityLogs, loadActiveSessions]);
 
   const handleEnableMFA = async () => {
     const { error } = await enableMFA();

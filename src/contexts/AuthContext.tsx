@@ -67,8 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (session?.user) {
           await loadUserSecuritySettings(session.user.id);
-          // Log successful authentication
-          await logSecurityEvent('auth_success', session.user.id, {
+          logSecurityEvent('auth_success', session.user.id, {
             event,
             device: getDeviceFingerprint(),
           }, 'low');
@@ -100,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Rate limiting
     const rateLimitKey = `signup_${email}`;
     if (!rateLimitCheck(rateLimitKey, 3, 60 * 60 * 1000)) { // 3 attempts per hour
-      await logSecurityEvent('signup_rate_limit', null, { email }, 'high');
+      logSecurityEvent('signup_rate_limit', null, { email }, 'high');
       return { error: new Error('Too many signup attempts. Please try again later.') };
     }
 
@@ -118,9 +117,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (error) {
-      await logSecurityEvent('signup_failed', null, { email, error: error.message }, 'medium');
+      logSecurityEvent('signup_failed', null, { email, error: error.message }, 'medium');
     } else {
-      await logSecurityEvent('signup_success', null, { email }, 'low');
+      logSecurityEvent('signup_success', null, { email }, 'low');
       clearRateLimit(rateLimitKey);
     }
 
@@ -131,7 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Rate limiting - 5 attempts per 15 minutes
     const rateLimitKey = `signin_${email}`;
     if (!rateLimitCheck(rateLimitKey, 5, 15 * 60 * 1000)) {
-      await logSecurityEvent('signin_rate_limit', null, { email }, 'high');
+      logSecurityEvent('signin_rate_limit', null, { email }, 'high');
       return { error: new Error('Too many login attempts. Please try again in 15 minutes.') };
     }
 
@@ -141,13 +140,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (error) {
-      await logSecurityEvent('signin_failed', null, {
+      logSecurityEvent('signin_failed', null, {
         email,
         error: error.message,
         device: getDeviceFingerprint(),
       }, 'high');
     } else {
-      await logSecurityEvent('signin_success', null, {
+      logSecurityEvent('signin_success', null, {
         email,
         device: getDeviceFingerprint(),
       }, 'low');
@@ -159,7 +158,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     if (user) {
-      await logSecurityEvent('signout', user.id, {}, 'low');
+      logSecurityEvent('signout', user.id, {}, 'low');
     }
     await supabase.auth.signOut();
     setUserRole('user');
@@ -172,10 +171,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // In production, this would set up TOTP
       setIsMFAEnabled(true);
-      await logSecurityEvent('mfa_enabled', user.id, {}, 'medium');
+      logSecurityEvent('mfa_enabled', user.id, {}, 'medium');
       return { error: null };
     } catch (error) {
-      await logSecurityEvent('mfa_enable_failed', user.id, { error }, 'high');
+      logSecurityEvent('mfa_enable_failed', user.id, { error }, 'high');
       return { error: error as Error };
     }
   };
@@ -194,9 +193,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (error) {
-      await logSecurityEvent('password_reset_failed', null, { email }, 'medium');
+      logSecurityEvent('password_reset_failed', null, { email }, 'medium');
     } else {
-      await logSecurityEvent('password_reset_requested', null, { email }, 'low');
+      logSecurityEvent('password_reset_requested', null, { email }, 'low');
     }
 
     return { error };
@@ -210,9 +209,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (error) {
-      await logSecurityEvent('password_update_failed', user.id, {}, 'high');
+      logSecurityEvent('password_update_failed', user.id, {}, 'high');
     } else {
-      await logSecurityEvent('password_updated', user.id, {}, 'medium');
+      logSecurityEvent('password_updated', user.id, {}, 'medium');
     }
 
     return { error };
