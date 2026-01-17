@@ -56,7 +56,7 @@ Future Scope
    ├── Backend APIs (Node / Express)
    └── IoT Device Integration (ESP32 / GPS)
 
-safe-haven-web/
+safe-haven-web-1/
 │
 ├─ src/
 │ ├─ components/
@@ -69,14 +69,27 @@ safe-haven-web/
 │ ├─ lib/
 │ │ └─ googleMapsLoader.ts # Utility to load Google Maps API
 │ │
+│ ├─ networking/
+│ │ ├─ apiClient.ts # Axios/fetch setup for API calls
+│ │ └─ endpoints.ts # API endpoint definitions
+│ │
+│ ├─ auth/
+│ │ ├─ jwtUtils.ts # JWT token generation, verification functions
+│ │ └─ authMiddleware.ts # Middleware for protected routes
+│ │
 │ └─ ... # Other source files
+│
+├─ backend/
+│ ├─ controllers/ # Business logic for endpoints
+│ ├─ models/ # Database models
+│ ├─ routes/ # Express routes
+│ └─ server.js # Backend server entry point
 │
 ├─ public/ # Static assets like images, icons
 ├─ package.json # NPM dependencies & scripts
 ├─ INFINITE_LOADING_FIX.md # Bug fix notes
 ├─ lint_results.txt # Linting results
 └─ README.md # Project info (this file)
-
 ---
 
 
