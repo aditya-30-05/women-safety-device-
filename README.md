@@ -56,6 +56,45 @@ Future Scope
    ├── Backend APIs (Node / Express)
    └── IoT Device Integration (ESP32 / GPS)
 
+safe-haven-web/
+│
+├─ src/
+│ ├─ components/
+│ │ ├─ MockMap.tsx # Mock map component for testing Google Maps integration
+│ │ └─ ... # Other UI components
+│ │
+│ ├─ contexts/
+│ │ └─ GoogleMapsContext.tsx # Context provider for Google Maps API
+│ │
+│ ├─ lib/
+│ │ └─ googleMapsLoader.ts # Utility to load Google Maps API
+│ │
+│ └─ ... # Other source files
+│
+├─ public/ # Static assets like images, icons
+├─ package.json # NPM dependencies & scripts
+├─ INFINITE_LOADING_FIX.md # Bug fix notes
+├─ lint_results.txt # Linting results
+└─ README.md # Project info (this file)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ---
 
 ## 🗺️ Google Maps Setup
