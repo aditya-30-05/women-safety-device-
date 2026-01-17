@@ -77,44 +77,11 @@ safe-haven-web/
 ├─ lint_results.txt # Linting results
 └─ README.md # Project info (this file)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ---
 
-## 🗺️ Google Maps Setup
 
-To enable location tracking with Google Maps:
 
-1. Get a Google Maps API Key:
-   - Go to [Google Cloud Console](https://console.cloud.google.com/)
-   - Create a new project or select an existing one
-   - Enable the "Maps JavaScript API"
-   - Create credentials (API Key)
-   - Restrict the API key to your domain (recommended)
 
-2. Add the API key to your environment:
-   - Create a `.env` file in the root directory
-   - Add: `VITE_GOOGLE_MAPS_API_KEY=your_api_key_here`
-
-3. The map will automatically load when the API key is configured.
-
-**Note:** The app will work without the API key, but the map visualization will not be available.
 
 
 
