@@ -5,7 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, MapPin, RefreshCw, Info, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { GoogleMap, useJsApiLoader, Marker, Circle } from '@react-google-maps/api';
+import { useGoogleMaps } from '@/contexts/GoogleMapsContext';
+import { GoogleMap, Marker, Circle } from '@react-google-maps/api';
+import MockMap from './MockMap';
 
 interface UnsafeZone {
   id: string;
@@ -79,6 +81,7 @@ const severityOpacities = {
 const UnsafeZoneMap = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isLoaded, loadError } = useGoogleMaps();
   const [unsafeZones, setUnsafeZones] = useState<UnsafeZone[]>(sampleUnsafeZones);
   const [selectedZone, setSelectedZone] = useState<UnsafeZone | null>(null);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -87,28 +90,31 @@ const UnsafeZoneMap = () => {
   const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const isPlaceholderKey = !googleMapsApiKey || googleMapsApiKey === 'your_google_maps_api_key_here';
 
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script-unsafe',
-    googleMapsApiKey: isPlaceholderKey ? '' : googleMapsApiKey,
-    libraries: ['places', 'drawing'] as any[]
-  });
-
-  // Get current location
+  // Get current location with timeout protection
   useEffect(() => {
+    // Set default immediately, update if geolocation succeeds
+    setCurrentLocation(defaultCenter);
+
     if (navigator.geolocation) {
+      const timeoutId = setTimeout(() => {
+        console.warn('Geolocation timed out, using default location');
+      }, 3000);
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          clearTimeout(timeoutId);
           setCurrentLocation({
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           });
         },
-        () => {
-          setCurrentLocation(defaultCenter);
-        }
+        (error) => {
+          clearTimeout(timeoutId);
+          console.warn('Geolocation error:', error);
+          // defaultCenter already set
+        },
+        { timeout: 3000, maximumAge: 60000 }
       );
-    } else {
-      setCurrentLocation(defaultCenter);
     }
   }, []);
 
@@ -165,214 +171,204 @@ const UnsafeZoneMap = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {loadError || isPlaceholderKey ? (
-          <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-center">
-            <p className="text-sm text-destructive">
-              {loadError ? 'Failed to load Google Maps intelligence' : 'Google Maps API Key Required'}
-            </p>
-            <p className="text-xs text-muted-foreground mt-2">
-              {isPlaceholderKey
-                ? 'Please add your VITE_GOOGLE_MAPS_API_KEY to the .env file to enable the interactive map intelligence.'
-                : 'Please check your API key and billing status in Google Cloud Console.'}
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="relative w-full h-80 md:h-96 rounded-xl overflow-hidden border-2 border-border shadow-sm">
-              {isLoaded && currentLocation ? (
-                <GoogleMap
-                  mapContainerStyle={mapContainerStyle}
-                  center={currentLocation}
-                  zoom={13}
-                  onLoad={map => setMap(map)}
-                  options={{
-                    mapTypeControl: true,
-                    streetViewControl: false,
-                    fullscreenControl: true,
-                    styles: [
-                      {
-                        featureType: 'poi',
-                        elementType: 'labels',
-                        stylers: [{ visibility: 'off' }],
-                      },
-                    ],
+        <>
+          <div className="relative w-full h-80 md:h-96 rounded-xl overflow-hidden border-2 border-border shadow-sm">
+            {loadError || isPlaceholderKey ? (
+              <MockMap />
+            ) : isLoaded ? (
+              <GoogleMap
+                mapContainerStyle={mapContainerStyle}
+                center={currentLocation || defaultCenter}
+                zoom={13}
+                onLoad={map => setMap(map)}
+                options={{
+                  mapTypeControl: true,
+                  streetViewControl: false,
+                  fullscreenControl: true,
+                  styles: [
+                    {
+                      featureType: 'poi',
+                      elementType: 'labels',
+                      stylers: [{ visibility: 'off' }],
+                    },
+                  ],
+                }}
+              >
+                {/* Draw unsafe zones */}
+                {unsafeZones.map((zone) => (
+                  <div key={zone.id}>
+                    <Circle
+                      center={{ lat: zone.lat, lng: zone.lng }}
+                      radius={zone.radius}
+                      options={{
+                        strokeColor: severityColors[zone.severity],
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                        fillColor: severityColors[zone.severity],
+                        fillOpacity: severityOpacities[zone.severity],
+                      }}
+                    />
+                    <Marker
+                      position={{ lat: zone.lat, lng: zone.lng }}
+                      title={zone.name}
+                      onClick={() => {
+                        setSelectedZone(zone);
+                        if (map) {
+                          map.panTo({ lat: zone.lat, lng: zone.lng });
+                          map.setZoom(15);
+                        }
+                      }}
+                      icon={{
+                        path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                        scale: 6,
+                        fillColor: severityColors[zone.severity],
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 2,
+                      }}
+                    />
+                  </div>
+                ))}
+
+                {/* Current Location Marker */}
+                <Marker
+                  position={currentLocation}
+                  title="Your Location"
+                  icon={{
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 8,
+                    fillColor: '#3b82f6',
+                    fillOpacity: 1,
+                    strokeColor: '#ffffff',
+                    strokeWeight: 2,
                   }}
-                >
-                  {/* Draw unsafe zones */}
-                  {unsafeZones.map((zone) => (
-                    <div key={zone.id}>
-                      <Circle
-                        center={{ lat: zone.lat, lng: zone.lng }}
-                        radius={zone.radius}
-                        options={{
-                          strokeColor: severityColors[zone.severity],
-                          strokeOpacity: 0.8,
-                          strokeWeight: 2,
-                          fillColor: severityColors[zone.severity],
-                          fillOpacity: severityOpacities[zone.severity],
-                        }}
-                      />
-                      <Marker
-                        position={{ lat: zone.lat, lng: zone.lng }}
-                        title={zone.name}
-                        onClick={() => {
-                          setSelectedZone(zone);
-                          if (map) {
-                            map.panTo({ lat: zone.lat, lng: zone.lng });
-                            map.setZoom(15);
-                          }
-                        }}
-                        icon={{
-                          path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-                          scale: 6,
-                          fillColor: severityColors[zone.severity],
-                          fillOpacity: 1,
-                          strokeColor: '#ffffff',
-                          strokeWeight: 2,
-                        }}
-                      />
-                    </div>
-                  ))}
-
-                  {/* Current Location Marker */}
-                  <Marker
-                    position={currentLocation}
-                    title="Your Location"
-                    icon={{
-                      path: google.maps.SymbolPath.CIRCLE,
-                      scale: 8,
-                      fillColor: '#3b82f6',
-                      fillOpacity: 1,
-                      strokeColor: '#ffffff',
-                      strokeWeight: 2,
-                    }}
-                  />
-                </GoogleMap>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/80 to-muted/50 backdrop-blur-sm">
-                  <div className="text-center">
-                    <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-primary" />
-                    <p className="text-sm font-medium text-foreground">Loading map...</p>
-                    <p className="text-xs text-muted-foreground mt-1">Analyzing unsafe zones</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Legend */}
-            <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-              <div className="flex items-center gap-2 mb-3">
-                <Info className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm font-semibold text-foreground">Zone Severity Levels</p>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-yellow-500/40 border-2 border-yellow-500"></div>
-                  <span className="text-xs text-muted-foreground">Low Risk</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-orange-500/40 border-2 border-orange-500"></div>
-                  <span className="text-xs text-muted-foreground">Medium Risk</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-red-500/40 border-2 border-red-500"></div>
-                  <span className="text-xs text-muted-foreground">High Risk</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-red-600/50 border-2 border-red-600"></div>
-                  <span className="text-xs text-muted-foreground">Critical</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Selected Zone Details */}
-            {selectedZone && (
-              <div className="p-4 rounded-xl bg-gradient-to-br from-destructive/10 to-destructive/5 border-2 border-destructive/20 shadow-sm">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <MapPin className="h-4 w-4 text-destructive" />
-                      <h4 className="font-semibold text-foreground">{selectedZone.name}</h4>
-                    </div>
-                    {getSeverityBadge(selectedZone.severity)}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => setSelectedZone(null)}
-                  >
-                    ×
-                  </Button>
-                </div>
-                <p className="text-sm text-muted-foreground mb-3">{selectedZone.description}</p>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Reports: {selectedZone.reportCount}</span>
-                  <span>Last: {selectedZone.lastReported}</span>
+                />
+              </GoogleMap>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/80 to-muted/50 backdrop-blur-sm">
+                <div className="text-center">
+                  <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-primary" />
+                  <p className="text-sm font-medium text-foreground">Loading map...</p>
+                  <p className="text-xs text-muted-foreground mt-1">Analyzing unsafe zones</p>
                 </div>
               </div>
             )}
+          </div>
 
-            {/* Zone List */}
-            <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-foreground">Reported Zones ({unsafeZones.length})</p>
+          {/* Legend */}
+          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+            <div className="flex items-center gap-2 mb-3">
+              <Info className="h-4 w-4 text-muted-foreground" />
+              <p className="text-sm font-semibold text-foreground">Zone Severity Levels</p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-yellow-500/40 border-2 border-yellow-500"></div>
+                <span className="text-xs text-muted-foreground">Low Risk</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-orange-500/40 border-2 border-orange-500"></div>
+                <span className="text-xs text-muted-foreground">Medium Risk</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-red-500/40 border-2 border-red-500"></div>
+                <span className="text-xs text-muted-foreground">High Risk</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-red-600/50 border-2 border-red-600"></div>
+                <span className="text-xs text-muted-foreground">Critical</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Selected Zone Details */}
+          {selectedZone && (
+            <div className="p-4 rounded-xl bg-gradient-to-br from-destructive/10 to-destructive/5 border-2 border-destructive/20 shadow-sm">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="h-4 w-4 text-destructive" />
+                    <h4 className="font-semibold text-foreground">{selectedZone.name}</h4>
+                  </div>
+                  {getSeverityBadge(selectedZone.severity)}
+                </div>
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={refreshZones}
-                  className="h-8"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => setSelectedZone(null)}
                 >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Refresh
+                  ×
                 </Button>
               </div>
-              {unsafeZones.map((zone) => (
-                <div
-                  key={zone.id}
-                  onClick={() => {
-                    setSelectedZone(zone);
-                    if (map) {
-                      map.panTo({ lat: zone.lat, lng: zone.lng });
-                      map.setZoom(15);
-                    }
-                  }}
-                  className="p-3 rounded-lg bg-background/50 border border-border/50 hover:bg-background/80 hover:border-primary/30 cursor-pointer transition-all"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
-                        <p className="text-sm font-medium text-foreground truncate">{zone.name}</p>
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-1">{zone.description}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      {getSeverityBadge(zone.severity)}
-                      <span className="text-xs text-muted-foreground">{zone.reportCount} reports</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Safety Tips */}
-            <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-              <div className="flex items-start gap-3">
-                <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-foreground mb-1">Safety Tips</p>
-                  <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
-                    <li>Avoid marked unsafe zones, especially after dark</li>
-                    <li>Share your location with trusted contacts when traveling</li>
-                    <li>Use well-lit and populated routes</li>
-                    <li>Report unsafe areas to help keep others safe</li>
-                  </ul>
-                </div>
+              <p className="text-sm text-muted-foreground mb-3">{selectedZone.description}</p>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Reports: {selectedZone.reportCount}</span>
+                <span>Last: {selectedZone.lastReported}</span>
               </div>
             </div>
-          </>
-        )}
+          )}
+
+          {/* Zone List */}
+          <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-semibold text-foreground">Reported Zones ({unsafeZones.length})</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshZones}
+                className="h-8"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Refresh
+              </Button>
+            </div>
+            {unsafeZones.map((zone) => (
+              <div
+                key={zone.id}
+                onClick={() => {
+                  setSelectedZone(zone);
+                  if (map) {
+                    map.panTo({ lat: zone.lat, lng: zone.lng });
+                    map.setZoom(15);
+                  }
+                }}
+                className="p-3 rounded-lg bg-background/50 border border-border/50 hover:bg-background/80 hover:border-primary/30 cursor-pointer transition-all"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+                      <p className="text-sm font-medium text-foreground truncate">{zone.name}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-1">{zone.description}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    {getSeverityBadge(zone.severity)}
+                    <span className="text-xs text-muted-foreground">{zone.reportCount} reports</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Safety Tips */}
+          <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+            <div className="flex items-start gap-3">
+              <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-foreground mb-1">Safety Tips</p>
+                <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                  <li>Avoid marked unsafe zones, especially after dark</li>
+                  <li>Share your location with trusted contacts when traveling</li>
+                  <li>Use well-lit and populated routes</li>
+                  <li>Report unsafe areas to help keep others safe</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </>
+
       </CardContent>
     </Card>
   );

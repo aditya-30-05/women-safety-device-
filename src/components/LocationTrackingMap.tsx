@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Navigation, RefreshCw, History, Square } from 'lucide-react';
+import { MapPin, Navigation, RefreshCw, History, Square, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGoogleMaps } from '@/contexts/GoogleMapsContext';
 import { supabase } from '@/integrations/supabase/client';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { GoogleMap, Marker } from '@react-google-maps/api';
+import MockMap from './MockMap';
 
 interface Location {
   lat: number;
@@ -31,6 +33,7 @@ const defaultCenter = { lat: 28.6139, lng: 77.2090 };
 const LocationTrackingMap = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isLoaded, loadError } = useGoogleMaps();
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [isTracking, setIsTracking] = useState(false);
   const [locationHistory, setLocationHistory] = useState<Location[]>([]);
@@ -39,12 +42,6 @@ const LocationTrackingMap = () => {
 
   const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const isPlaceholderKey = !googleMapsApiKey || googleMapsApiKey === 'your_google_maps_api_key_here';
-
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: isPlaceholderKey ? '' : googleMapsApiKey,
-    libraries: ['places'] as any[]
-  });
 
   const onUnmount = useCallback(function callback(map: google.maps.Map) {
     setMap(null);
@@ -236,163 +233,153 @@ const LocationTrackingMap = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {loadError || isPlaceholderKey ? (
-          <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-center">
-            <p className="text-sm text-destructive">
-              {loadError ? 'Failed to load Google Maps' : 'Google Maps API Key Required'}
-            </p>
-            <p className="text-xs text-muted-foreground mt-2">
-              {isPlaceholderKey
-                ? 'Please add your VITE_GOOGLE_MAPS_API_KEY to the .env file to enable tracking maps.'
-                : 'Please check your API key and billing status in Google Cloud Console.'}
-            </p>
+        <>
+          <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden border-2 border-border shadow-sm">
+            {loadError || isPlaceholderKey ? (
+              <MockMap />
+            ) : isLoaded ? (
+              <GoogleMap
+                mapContainerStyle={mapContainerStyle}
+                center={currentLocation || defaultCenter}
+                zoom={15}
+                onLoad={map => setMap(map)}
+                onUnmount={onUnmount}
+                options={{
+                  mapTypeControl: true,
+                  streetViewControl: false,
+                  fullscreenControl: true,
+                  styles: [
+                    {
+                      featureType: 'poi',
+                      elementType: 'labels',
+                      stylers: [{ visibility: 'off' }],
+                    },
+                  ],
+                }}
+              >
+                {currentLocation && (
+                  <Marker
+                    position={currentLocation}
+                    icon={{
+                      path: google.maps.SymbolPath.CIRCLE,
+                      scale: 8,
+                      fillColor: '#ef4444',
+                      fillOpacity: 1,
+                      strokeColor: '#ffffff',
+                      strokeWeight: 2,
+                    }}
+                  />
+                )}
+              </GoogleMap>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/80 to-muted/50 backdrop-blur-sm">
+                <div className="text-center">
+                  <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-primary" />
+                  <p className="text-sm font-medium text-foreground">Loading map...</p>
+                  <p className="text-xs text-muted-foreground mt-1">Please wait</p>
+                </div>
+              </div>
+            )}
           </div>
-        ) : (
-          <>
-            <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden border-2 border-border shadow-sm">
-              {isLoaded ? (
-                <GoogleMap
-                  mapContainerStyle={mapContainerStyle}
-                  center={currentLocation || defaultCenter}
-                  zoom={15}
-                  onLoad={map => setMap(map)}
-                  onUnmount={onUnmount}
-                  options={{
-                    mapTypeControl: true,
-                    streetViewControl: false,
-                    fullscreenControl: true,
-                    styles: [
-                      {
-                        featureType: 'poi',
-                        elementType: 'labels',
-                        stylers: [{ visibility: 'off' }],
-                      },
-                    ],
-                  }}
-                >
-                  {currentLocation && (
-                    <Marker
-                      position={currentLocation}
-                      icon={{
-                        path: google.maps.SymbolPath.CIRCLE,
-                        scale: 8,
-                        fillColor: '#ef4444',
-                        fillOpacity: 1,
-                        strokeColor: '#ffffff',
-                        strokeWeight: 2,
-                      }}
-                    />
-                  )}
-                </GoogleMap>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/80 to-muted/50 backdrop-blur-sm">
-                  <div className="text-center">
-                    <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-primary" />
-                    <p className="text-sm font-medium text-foreground">Loading map...</p>
-                    <p className="text-xs text-muted-foreground mt-1">Please wait</p>
-                  </div>
+
+          {currentLocation && (
+            <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-5 h-5 text-primary" />
                 </div>
-              )}
-            </div>
-
-            {currentLocation && (
-              <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-5 h-5 text-primary" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-foreground">Current Location</span>
+                    <span className="text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded">
+                      {currentLocation.timestamp.toLocaleTimeString()}
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-semibold text-foreground">Current Location</span>
-                      <span className="text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded">
-                        {currentLocation.timestamp.toLocaleTimeString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-foreground break-all">
-                        {currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row gap-2">
-              {!isTracking ? (
-                <Button
-                  onClick={startTracking}
-                  className="flex-1 h-11"
-                  variant="default"
-                  size="lg"
-                >
-                  <Navigation className="h-4 w-4 mr-2" />
-                  Start Tracking
-                </Button>
-              ) : (
-                <Button
-                  onClick={stopTracking}
-                  className="flex-1 h-11"
-                  variant="destructive"
-                  size="lg"
-                >
-                  <Square className="h-4 w-4 mr-2" />
-                  Stop Tracking
-                </Button>
-              )}
-              <div className="flex gap-2">
-                <Button
-                  onClick={getCurrentLocation}
-                  variant="outline"
-                  disabled={!isLoaded}
-                  className="h-11 px-4"
-                  title="Refresh location"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Refresh</span>
-                </Button>
-                <Button
-                  onClick={loadLocationHistory}
-                  variant="outline"
-                  disabled={!isLoaded}
-                  className="h-11 px-4"
-                  title="View location history"
-                >
-                  <History className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">History</span>
-                </Button>
-              </div>
-            </div>
-
-            {locationHistory.length > 0 && (
-              <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <History className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm font-semibold text-foreground">
-                      Recent Locations
-                    </p>
+                    <span className="font-mono text-xs text-foreground break-all">
+                      {currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}
+                    </span>
                   </div>
-                  <span className="text-xs text-muted-foreground bg-background px-2 py-1 rounded">
-                    {locationHistory.length} points
-                  </span>
-                </div>
-                <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-thin">
-                  {locationHistory.slice(0, 5).map((loc, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-background/50 hover:bg-background/80 transition-colors">
-                      <span className="font-mono text-xs text-foreground">
-                        {loc.lat.toFixed(4)}, {loc.lng.toFixed(4)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {loc.timestamp.toLocaleTimeString()}
-                      </span>
-                    </div>
-                  ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            {!isTracking ? (
+              <Button
+                onClick={startTracking}
+                className="flex-1 h-11"
+                variant="default"
+                size="lg"
+              >
+                <Navigation className="h-4 w-4 mr-2" />
+                Start Tracking
+              </Button>
+            ) : (
+              <Button
+                onClick={stopTracking}
+                className="flex-1 h-11"
+                variant="destructive"
+                size="lg"
+              >
+                <Square className="h-4 w-4 mr-2" />
+                Stop Tracking
+              </Button>
             )}
-          </>
-        )}
+            <div className="flex gap-2">
+              <Button
+                onClick={getCurrentLocation}
+                variant="outline"
+                disabled={!isLoaded && !isPlaceholderKey}
+                className="h-11 px-4"
+                title="Refresh location"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Refresh</span>
+              </Button>
+              <Button
+                onClick={loadLocationHistory}
+                variant="outline"
+                disabled={!isLoaded && !isPlaceholderKey}
+                className="h-11 px-4"
+                title="View location history"
+              >
+                <History className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">History</span>
+              </Button>
+            </div>
+          </div>
+
+          {locationHistory.length > 0 && (
+            <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <History className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm font-semibold text-foreground">
+                    Recent Locations
+                  </p>
+                </div>
+                <span className="text-xs text-muted-foreground bg-background px-2 py-1 rounded">
+                  {locationHistory.length} points
+                </span>
+              </div>
+              <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-thin">
+                {locationHistory.slice(0, 5).map((loc, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-background/50 hover:bg-background/80 transition-colors">
+                    <span className="font-mono text-xs text-foreground">
+                      {loc.lat.toFixed(4)}, {loc.lng.toFixed(4)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {loc.timestamp.toLocaleTimeString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+
       </CardContent>
     </Card>
   );

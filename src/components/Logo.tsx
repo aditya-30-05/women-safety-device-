@@ -12,7 +12,7 @@ const sizeMap = {
   xl: { icon: 64, text: 'text-4xl', container: 'w-24 h-24' },
 };
 
-export const Logo = ({ size = 'md', showText = false, className = '', variant = 'icon' }: LogoProps) => {
+const Logo = ({ size = 'md', showText = false, className = '', variant = 'icon' }: LogoProps) => {
   const sizes = sizeMap[size];
 
   return (

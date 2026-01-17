@@ -30,7 +30,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('[Dashboard] Auth state - loading:', loading, 'user:', user ? 'present' : 'null');
     if (!loading && !user) {
+      console.log('[Dashboard] No user, redirecting to /auth');
       navigate('/auth');
     }
   }, [user, loading, navigate]);
@@ -41,6 +43,7 @@ const Dashboard = () => {
   };
 
   if (loading) {
+    console.log('[Dashboard] Still loading...');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -51,7 +54,12 @@ const Dashboard = () => {
     );
   }
 
-  if (!user) return null;
+  if (!user) {
+    console.log('[Dashboard] Loading complete but no user, returning null');
+    return null;
+  }
+
+  console.log('[Dashboard] Rendering dashboard for user:', user.id);
 
   return (
     <div className="min-h-screen">

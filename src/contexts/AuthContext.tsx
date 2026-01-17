@@ -59,40 +59,86 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    let mounted = true;
+
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('[AuthContext] Auth state changed:', event);
+        if (!mounted) {
+          console.log('[AuthContext] Component unmounted, ignoring auth change');
+          return;
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          await loadUserSecuritySettings(session.user.id);
-          logSecurityEvent('auth_success', session.user.id, {
+          console.log('[AuthContext] User authenticated:', session.user.id);
+          // Load settings in background, don't block loading state
+          loadUserSecuritySettings(session.user.id);
+          logSecurityEvent('auth_event', session.user.id, {
             event,
             device: getDeviceFingerprint(),
           }, 'low');
         } else {
+          console.log('[AuthContext] No user session');
           setUserRole('user');
           setIsMFAEnabled(false);
         }
 
+        console.log('[AuthContext] Auth state change resolved, setting loading false');
         setLoading(false);
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Initial session check
+    const initAuth = async () => {
+      console.log('[AuthContext] Initializing authentication...');
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (!mounted) {
+          console.log('[AuthContext] Component unmounted, aborting init');
+          return;
+        }
 
-      if (session?.user) {
-        await loadUserSecuritySettings(session.user.id);
+        if (error) {
+          console.error('[AuthContext] getSession error:', error);
+        }
+
+        console.log('[AuthContext] Session:', session ? 'Found' : 'None');
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          console.log('[AuthContext] Loading security settings for user:', session.user.id);
+          await loadUserSecuritySettings(session.user.id);
+        }
+      } catch (error) {
+        console.error('[AuthContext] Auth initialization error:', error);
+      } finally {
+        if (mounted) {
+          console.log('[AuthContext] Setting loading to false');
+          setLoading(false);
+        }
       }
+    };
 
-      setLoading(false);
-    });
+    initAuth();
 
-    return () => subscription.unsubscribe();
+    // Safety timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('Auth initialization timed out, forcing loading false');
+        setLoading(false);
+      }
+    }, 5000);
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [loadUserSecuritySettings]);
 
   const signUp = async (email: string, password: string, fullName: string) => {
