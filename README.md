@@ -1,40 +1,98 @@
+# 🛡️ SafeHer: Advanced Women Safety Ecosystem
 
-# 🛡️ Women Safety Device – Secure Web Application 🚨
-
-A modern, secure, and user-friendly **Women Safety Web Application** built to provide
-quick emergency assistance using an SOS system.  
-The project focuses on **security, reliability, and real-world usability**.
+SafeHer is a state-of-the-art, full-stack safety application designed to provide women with a comprehensive security toolkit. Beyond a simple SOS button, SafeHer integrates real-time tracking, AI-powered threat prediction, discreet evidence collection, and a robust stealth mode to ensure user safety even in the most critical situations.
 
 ---
 
-## 📌 Problem Statement
+## 🚀 Project Overview
 
-Women often face unsafe situations where immediate help is required.
-Existing solutions are either slow, unreliable, or lack strong security.
+### The Purpose
+In an increasingly unpredictable world, personal safety is a paramount concern. **SafeHer** was built to empower women with technology that works seamlessly during emergencies, provides proactive safety measures, and ensures that evidence is secured even if the device is offline or compromised.
 
----
-
-## 💡 Solution
-
-This project provides a **digital women safety system** where a user can:
-- Trigger an **SOS emergency alert**
-- Securely authenticate and access the system
-- View emergency-related UI in real time
-- Extend the system to IoT devices and backend APIs
+### The Problem It Solves
+- **Delayed Assistance:** Traditional methods can be slow. SafeHer uses real-time WebSockets to broadcast SOS alerts instantly.
+- **Detection Risk:** If an attacker sees a safety app, they may compromise the device. SafeHer includes a **Stealth Mode** that disguises the app as a common utility.
+- **Evidence Loss:** Critical evidence (photos/audio) is often lost if a device is taken or internet is cut. SafeHer's **Silent Evidence Collection** works offline and captures data discreetly.
+- **Proactive Safety:** Instead of just reacting, SafeHer uses **Threat Prediction** to alert users about potentially unsafe zones.
 
 ---
 
-## ✨ Key Features
+## 🧠 Complete Feature List
 
-- 🚨 SOS Emergency Button
-- 🗺️ **Real-time Location Tracking with Google Maps**
-- 📍 Live Location Sharing
-- 🔐 Secure Authentication (Context API)
-- 🧠 Session Management
-- 🎨 Responsive & Clean UI
-- ⚡ Fast performance using Vite
-- 🛡️ Security-focused project structure
+### 👩‍💻 User-Side Features
+- **🚨 One-Tap SOS:** Instant emergency broadcast with real-time location.
+- **🕵️ Stealth Mode:** Disguise the app as a Calculator, Music Player, or Settings menu.
+- **📸 Silent Evidence Collection:** Discreetly capture photos, audio, video, and location coordinates.
+- **🗺️ Journey Tracking:** Real-time monitoring of your route with live updates to trusted contacts.
+- **🔐 End-to-End Encryption:** Your SOS data and evidence are encrypted locally with a password only you know.
+- **👥 Help Network:** Access a community of nearby helpers and emergency services.
+- **🧠 Threat Prediction:** Interactive map visualizing unsafe zones based on historical and real-time data.
+- **📶 Offline Mode:** Collect evidence and log movements without an active internet connection; data syncs automatically when back online.
 
+### 🛠️ Admin/Security Side Features
+- **📊 Alert Dashboard:** Real-time monitoring of active SOS broadcasts.
+- **📍 Live Tracking Console:** View the exact path and current location of users in distress.
+- **📁 Evidence Vault:** Secure access to synced evidence for legal follow-up (encrypted).
+- **🛡️ Security Management:** Control safety parameters and verify emergency contacts.
+
+---
+
+## 🏗️ Tech Stack
+
+### Frontend
+- **Framework:** [React 18](https://reactjs.org/) with [Vite](https://vitejs.dev/)
+- **Language:** [TypeScript](https://www.typescriptlang.org/)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **UI Components:** [Radix UI](https://www.radix-ui.com/) & [Shadcn UI](https://ui.shadcn.com/)
+- **Iconography:** [Lucide React](https://lucide.dev/)
+- **Maps:** [Google Maps JavaScript API](https://developers.google.com/maps) & [Mapbox GL](https://www.mapbox.com/)
+- **State Management:** [TanStack Query (React Query)](https://tanstack.com/query/latest) & React Context API
+
+### Backend & Database
+- **Primary Backend:** [NestJS](https://nestjs.com/) (SOS WebSocket Gateway)
+- **Real-time Engine:** [Socket.io](https://socket.io/)
+- **Database/Auth:** [Supabase](https://supabase.com/) (PostgreSQL)
+- **Serverless:** Supabase Edge Functions (Deno)
+
+### Security & Safety
+- **Encryption:** Web Crypto API for local E2EE.
+- **Auth:** Supabase Auth (Email/Password, Google OAuth).
+- **Persistence:** LocalStorage for offline-first capabilities.
+
+---
+
+## 🧩 System Architecture
+
+SafeHer follows a decentralized yet highly synchronized architecture:
+
+1.  **Client (Frontend):** Runs the main UI, handles local encryption, manages offline evidence storage, and initiates Geolocation tracking.
+2.  **Real-time Gateway (NestJS):** A dedicated server handling high-frequency WebSocket connections for SOS broadcasts, ensuring sub-second delivery to the help network.
+3.  **Data Layer (Supabase):** Stores user profiles, encrypted evidence, trusted contacts, and historical safety data.
+4.  **Integration Services:** Google Maps for visualization and Supabase Edge Functions for background tasks like threat analysis.
+
+**Data Flow:**
+`Action Trigger (SOS)` → `Local Encryption` → `WebSocket Broadcast (NestJS)` → `Database Persistence (Supabase)` → `Notification Delivery`
+
+---
+
+## 📁 Project Structure
+
+```text
+├── .agent/              # Agent workflows and configurations
+├── server/              # NestJS Backend (Real-time SOS Gateway)
+│   ├── src/sos/        # WebSocket logic for emergency alerts
+│   └── main.ts         # Gateway entry point
+├── supabase/            # Supabase configuration & migrations
+│   ├── migrations/      # SQL schema definitions
+│   └── functions/       # Edge functions for threat prediction
+├── src/
+│   ├── components/      # Core UI modules (StealthMode, SOSButton, etc.)
+│   ├── contexts/        # Auth and Google Maps integration contexts
+│   ├── hooks/           # Custom React hooks for security & state
+│   ├── lib/             # Utility functions (Encryption, API clients)
+│   ├── pages/           # Main application views (Dashboard, Auth, Profile)
+│   └── integrations/    # Supabase & external tool clients
+└── public/              # Static assets and PWA icons
 ---
 
 ## 🧱 Project Architecture
