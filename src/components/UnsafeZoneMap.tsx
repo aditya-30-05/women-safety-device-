@@ -2,12 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, MapPin, RefreshCw, Info, Shield } from 'lucide-react';
+import { AlertTriangle, MapPin, RefreshCw, Info, Shield, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleMaps } from '@/contexts/GoogleMapsContext';
+import { supabase } from '@/integrations/supabase/client';
 import { GoogleMap, Marker, Circle } from '@react-google-maps/api';
-import MockMap from './MockMap';
 
 interface UnsafeZone {
   id: string;
@@ -20,42 +20,6 @@ interface UnsafeZone {
   lastReported: string;
   reportCount: number;
 }
-
-const sampleUnsafeZones: UnsafeZone[] = [
-  {
-    id: '1',
-    name: 'Downtown Area - Night',
-    lat: 28.6139,
-    lng: 77.2090,
-    radius: 500,
-    severity: 'high',
-    description: 'Multiple reports of harassment after 10 PM',
-    lastReported: '2024-01-03',
-    reportCount: 12,
-  },
-  {
-    id: '2',
-    name: 'Park Area',
-    lat: 28.6239,
-    lng: 77.2190,
-    radius: 300,
-    severity: 'medium',
-    description: 'Isolated incidents reported',
-    lastReported: '2024-01-02',
-    reportCount: 5,
-  },
-  {
-    id: '3',
-    name: 'Industrial Zone',
-    lat: 28.6039,
-    lng: 77.1990,
-    radius: 800,
-    severity: 'critical',
-    description: 'High crime rate area - avoid after dark',
-    lastReported: '2024-01-04',
-    reportCount: 25,
-  },
-];
 
 const mapContainerStyle = {
   width: '100%',
@@ -82,43 +46,95 @@ const UnsafeZoneMap = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { isLoaded, loadError } = useGoogleMaps();
-  const [unsafeZones, setUnsafeZones] = useState<UnsafeZone[]>(sampleUnsafeZones);
+  const [unsafeZones, setUnsafeZones] = useState<UnsafeZone[]>([]);
   const [selectedZone, setSelectedZone] = useState<UnsafeZone | null>(null);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
 
-  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  const isPlaceholderKey = !googleMapsApiKey || googleMapsApiKey === 'your_google_maps_api_key_here';
+  const fetchZones = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await (supabase as any)
+        .from('unsafe_zones')
+        .select('*');
 
-  // Get current location with timeout protection
+      if (error) throw error;
+
+      if (data) {
+        const transformedZones: UnsafeZone[] = data.map((z: any) => ({
+          id: z.id,
+          name: z.name,
+          lat: z.lat,
+          lng: z.lng,
+          radius: z.radius,
+          severity: z.severity as any,
+          description: z.description || '',
+          lastReported: new Date(z.updated_at).toLocaleDateString(),
+          reportCount: z.report_count || 1
+        }));
+        setUnsafeZones(transformedZones);
+      }
+    } catch (error) {
+      console.error('Error fetching unsafe zones:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Server Connection Error',
+        description: 'Failed to fetch unsafe zones from database.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
-    // Set default immediately, update if geolocation succeeds
-    setCurrentLocation(defaultCenter);
+    fetchZones();
 
+    // Subscribe to real-time updates
+    const channel = (supabase as any)
+      .channel('unsafe-zones-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'unsafe_zones' },
+        () => {
+          fetchZones();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      (supabase as any).removeChannel(channel);
+    };
+  }, [fetchZones]);
+
+  const requestLocation = useCallback(() => {
+    setPermissionError(null);
     if (navigator.geolocation) {
-      const timeoutId = setTimeout(() => {
-        console.warn('Geolocation timed out, using default location');
-      }, 3000);
-
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          clearTimeout(timeoutId);
           setCurrentLocation({
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           });
         },
         (error) => {
-          clearTimeout(timeoutId);
           console.warn('Geolocation error:', error);
-          // defaultCenter already set
+          if (error.code === error.PERMISSION_DENIED) {
+            setPermissionError('Location permission required');
+          }
+          // fallback to default already handled in initial state if needed
         },
-        { timeout: 3000, maximumAge: 60000 }
+        { timeout: 5000, maximumAge: 60000 }
       );
     }
   }, []);
 
-
+  // Get current location
+  useEffect(() => {
+    setCurrentLocation(defaultCenter);
+    requestLocation();
+  }, [requestLocation]);
 
   const getSeverityBadge = (severity: string) => {
     const variants = {
@@ -146,11 +162,11 @@ const UnsafeZoneMap = () => {
   };
 
   const refreshZones = () => {
+    fetchZones();
     toast({
       title: 'Zones Refreshed',
       description: 'Unsafe zone data has been updated.',
     });
-    // In production, this would fetch latest data from API
   };
 
   return (
@@ -173,8 +189,29 @@ const UnsafeZoneMap = () => {
       <CardContent className="space-y-4">
         <>
           <div className="relative w-full h-80 md:h-96 rounded-xl overflow-hidden border-2 border-border shadow-sm">
-            {loadError || isPlaceholderKey ? (
-              <MockMap />
+            {loadError ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-destructive/5 text-destructive p-6 text-center">
+                <div className="space-y-3">
+                  <AlertCircle className="w-10 h-10 mx-auto" />
+                  <div>
+                    <h3 className="font-semibold">Maps Configuration Error</h3>
+                    <p className="text-sm opacity-90">Please check your Google Maps API key.</p>
+                  </div>
+                </div>
+              </div>
+            ) : permissionError ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-muted/50 text-foreground p-6 text-center">
+                <div className="space-y-3">
+                  <MapPin className="w-10 h-10 mx-auto text-primary" />
+                  <div>
+                    <h3 className="font-semibold">Location Permission Required</h3>
+                    <p className="text-sm text-muted-foreground">Please enable GPS to see your location on the map.</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={requestLocation}>
+                    Grant Access
+                  </Button>
+                </div>
+              </div>
             ) : isLoaded ? (
               <GoogleMap
                 mapContainerStyle={mapContainerStyle}
@@ -231,18 +268,20 @@ const UnsafeZoneMap = () => {
                 ))}
 
                 {/* Current Location Marker */}
-                <Marker
-                  position={currentLocation}
-                  title="Your Location"
-                  icon={{
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 8,
-                    fillColor: '#3b82f6',
-                    fillOpacity: 1,
-                    strokeColor: '#ffffff',
-                    strokeWeight: 2,
-                  }}
-                />
+                {currentLocation && (
+                  <Marker
+                    position={currentLocation}
+                    title="Your Location"
+                    icon={{
+                      path: google.maps.SymbolPath.CIRCLE,
+                      scale: 8,
+                      fillColor: '#3b82f6',
+                      fillOpacity: 1,
+                      strokeColor: '#ffffff',
+                      strokeWeight: 2,
+                    }}
+                  />
+                )}
               </GoogleMap>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/80 to-muted/50 backdrop-blur-sm">
@@ -375,4 +414,5 @@ const UnsafeZoneMap = () => {
 };
 
 export default UnsafeZoneMap;
+
 

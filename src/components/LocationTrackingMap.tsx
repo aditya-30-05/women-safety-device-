@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Navigation, RefreshCw, History, Square, Info } from 'lucide-react';
+import { MapPin, Navigation, RefreshCw, History, Square, Info, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleMaps } from '@/contexts/GoogleMapsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { GoogleMap, Marker } from '@react-google-maps/api';
-import MockMap from './MockMap';
 
 interface Location {
   lat: number;
@@ -39,12 +38,19 @@ const LocationTrackingMap = () => {
   const [locationHistory, setLocationHistory] = useState<Location[]>([]);
   const watchIdRef = useRef<number | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
-
-  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  const isPlaceholderKey = !googleMapsApiKey || googleMapsApiKey === 'your_google_maps_api_key_here';
+  const [permissionError, setPermissionError] = useState<string | null>(null);
 
   const onUnmount = useCallback(function callback(map: google.maps.Map) {
     setMap(null);
+  }, []);
+
+  // Cleanup tracking on unmount
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
   }, []);
 
   // Update map center when location changes
@@ -64,6 +70,7 @@ const LocationTrackingMap = () => {
       return;
     }
 
+    setPermissionError(null);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const location: Location = {
@@ -73,7 +80,6 @@ const LocationTrackingMap = () => {
         };
         setCurrentLocation(location);
 
-        // Save to database (optional - table may not exist yet)
         if (user) {
           (supabase as any)
             .from('location_history')
@@ -84,8 +90,13 @@ const LocationTrackingMap = () => {
               created_at: location.timestamp.toISOString(),
             } as LocationHistoryItem)
             .then(({ error }) => {
-              if (error && !error.message.includes('relation') && !error.message.includes('does not exist')) {
+              if (error) {
                 console.error('Error saving location:', error);
+                toast({
+                  variant: 'destructive',
+                  title: 'Server Connection Error',
+                  description: 'Failed to save location data.',
+                });
               }
             });
         }
@@ -96,10 +107,15 @@ const LocationTrackingMap = () => {
         });
       },
       (error) => {
+        let errorMsg = 'Unable to get your location. Please enable location services.';
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMsg = 'Location permission required. Please enable GPS.';
+          setPermissionError('Location permission required');
+        }
         toast({
           variant: 'destructive',
           title: 'Location Error',
-          description: 'Unable to get your location. Please enable location services.',
+          description: errorMsg,
         });
       },
       {
@@ -120,6 +136,7 @@ const LocationTrackingMap = () => {
       return;
     }
 
+    setPermissionError(null);
     setIsTracking(true);
     getCurrentLocation();
 
@@ -133,7 +150,6 @@ const LocationTrackingMap = () => {
         setCurrentLocation(location);
         setLocationHistory((prev) => [...prev.slice(-49), location]); // Keep last 50 locations
 
-        // Save to database (optional - table may not exist yet)
         if (user) {
           (supabase as any)
             .from('location_history')
@@ -144,17 +160,22 @@ const LocationTrackingMap = () => {
               created_at: location.timestamp.toISOString(),
             } as LocationHistoryItem)
             .then(({ error }) => {
-              if (error && !error.message.includes('relation') && !error.message.includes('does not exist')) {
+              if (error) {
                 console.error('Error saving location:', error);
               }
             });
         }
       },
       (error) => {
+        let errorMsg = 'Unable to track your location.';
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMsg = 'Location permission required.';
+          setPermissionError('Location permission required');
+        }
         toast({
           variant: 'destructive',
           title: 'Tracking Error',
-          description: 'Unable to track your location.',
+          description: errorMsg,
         });
         setIsTracking(false);
       },
@@ -187,31 +208,35 @@ const LocationTrackingMap = () => {
   const loadLocationHistory = useCallback(async () => {
     if (!user) return;
 
-    const { data, error } = await (supabase as any)
-      .from('location_history')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(50);
+    try {
+      const { data, error } = await (supabase as any)
+        .from('location_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-    if (error) {
-      // Table might not exist yet, that's okay
-      if (error.message.includes('relation') || error.message.includes('does not exist')) {
-        return;
+      if (error) {
+        throw error;
       }
-      console.error('Error loading location history:', error);
-      return;
-    }
 
-    if (data) {
-      const locations: Location[] = (data as LocationHistoryItem[]).map((item) => ({
-        lat: item.latitude,
-        lng: item.longitude,
-        timestamp: new Date(item.created_at),
-      }));
-      setLocationHistory(locations);
+      if (data) {
+        const locations: Location[] = (data as LocationHistoryItem[]).map((item) => ({
+          lat: item.latitude,
+          lng: item.longitude,
+          timestamp: new Date(item.created_at),
+        }));
+        setLocationHistory(locations);
+      }
+    } catch (error) {
+      console.error('Error loading location history:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Server Connection Error',
+        description: 'Failed to load location history.',
+      });
     }
-  }, [user]);
+  }, [user, toast]);
 
   useEffect(() => {
     loadLocationHistory();
@@ -235,8 +260,29 @@ const LocationTrackingMap = () => {
       <CardContent className="space-y-4">
         <>
           <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden border-2 border-border shadow-sm">
-            {loadError || isPlaceholderKey ? (
-              <MockMap />
+            {loadError ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-destructive/5 text-destructive p-6 text-center">
+                <div className="space-y-3">
+                  <AlertCircle className="w-10 h-10 mx-auto" />
+                  <div>
+                    <h3 className="font-semibold">Maps Configuration Error</h3>
+                    <p className="text-sm opacity-90">Please check your Google Maps API key.</p>
+                  </div>
+                </div>
+              </div>
+            ) : permissionError ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-muted/50 text-foreground p-6 text-center">
+                <div className="space-y-3">
+                  <MapPin className="w-10 h-10 mx-auto text-primary" />
+                  <div>
+                    <h3 className="font-semibold">Location Permission Required</h3>
+                    <p className="text-sm text-muted-foreground">Please enable GPS to use tracking features.</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={getCurrentLocation}>
+                    Grant Access
+                  </Button>
+                </div>
+              </div>
             ) : isLoaded ? (
               <GoogleMap
                 mapContainerStyle={mapContainerStyle}
@@ -331,7 +377,7 @@ const LocationTrackingMap = () => {
               <Button
                 onClick={getCurrentLocation}
                 variant="outline"
-                disabled={!isLoaded && !isPlaceholderKey}
+                disabled={!isLoaded}
                 className="h-11 px-4"
                 title="Refresh location"
               >
@@ -341,7 +387,7 @@ const LocationTrackingMap = () => {
               <Button
                 onClick={loadLocationHistory}
                 variant="outline"
-                disabled={!isLoaded && !isPlaceholderKey}
+                disabled={!isLoaded}
                 className="h-11 px-4"
                 title="View location history"
               >
@@ -386,4 +432,5 @@ const LocationTrackingMap = () => {
 };
 
 export default LocationTrackingMap;
+
 

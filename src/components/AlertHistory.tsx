@@ -43,6 +43,28 @@ const AlertHistory = () => {
   useEffect(() => {
     if (user) {
       fetchAlerts();
+
+      // Subscribe to real-time updates for emergency alerts
+      const channel = supabase
+        .channel('emergency-alerts-history')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'emergency_alerts',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            console.log('Real-time alert update received:', payload);
+            fetchAlerts();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [user, fetchAlerts]);
 

@@ -112,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (session?.user) {
           console.log('[AuthContext] Loading security settings for user:', session.user.id);
-          await loadUserSecuritySettings(session.user.id);
+          loadUserSecuritySettings(session.user.id);
         }
       } catch (error) {
         console.error('[AuthContext] Auth initialization error:', error);

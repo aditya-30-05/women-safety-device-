@@ -12,11 +12,14 @@ const libraries: ("places" | "drawing" | "geometry" | "visualization")[] = ['pla
 
 export const GoogleMapsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    const isPlaceholderKey = !googleMapsApiKey || googleMapsApiKey === 'your_google_maps_api_key_here';
+
+    if (!googleMapsApiKey) {
+        console.error('CRITICAL: VITE_GOOGLE_MAPS_API_KEY is missing in environment variables.');
+    }
 
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script-global',
-        googleMapsApiKey: isPlaceholderKey ? '' : googleMapsApiKey,
+        googleMapsApiKey: googleMapsApiKey || '',
         libraries: libraries,
     });
 
