@@ -2,6 +2,7 @@
 
 SafeHer is a state-of-the-art, full-stack safety application designed to provide women with a comprehensive security toolkit. Beyond a simple SOS button, SafeHer integrates real-time tracking, AI-powered threat prediction, discreet evidence collection, and a robust stealth mode to ensure user safety even in the most critical situations.
 
+
 ---
 
 ## 🚀 Project Overview
