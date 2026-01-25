@@ -8,7 +8,6 @@ SafeHer is a state-of-the-art, full-stack safety application designed to provide
 ## 🚀 Project Overview
    
 
-
 ### The Purpose
 In an increasingly unpredictable world, personal safety is a paramount concern. **SafeHer** was built to empower women with technology that works seamlessly during emergencies, provides proactive safety measures, and ensures that evidence is secured even if the device is offline or compromised.
 
