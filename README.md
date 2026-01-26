@@ -60,7 +60,6 @@ In an increasingly unpredictable world, personal safety is a paramount concern. 
 - **Auth:** Supabase Auth (Email/Password, Google OAuth).
 - **Persistence:** LocalStorage for offline-first capabilities.
 =======
->>>>>>> 1885825901f1d7616b154a5671a77359b1eba312
 
 ### Backend & Database
 - **Primary Backend:** [NestJS](https://nestjs.com/) (SOS WebSocket Gateway)
