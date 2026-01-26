@@ -32,6 +32,7 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [role, setRole] = useState<'woman' | 'parent'>('woman');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -46,7 +47,8 @@ const Auth = () => {
     signInWithMagicLink,
     signUp,
     resetPassword,
-    user
+    user,
+    userRole
   } = useAuth();
   const navigate = useNavigate();
   const {
@@ -54,9 +56,10 @@ const Auth = () => {
   } = useToast();
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      const targetPath = userRole === 'parent' ? '/dashboard/monitoring' : '/dashboard/safety';
+      navigate(targetPath);
     }
-  }, [user, navigate]);
+  }, [user, userRole, navigate]);
 
   useEffect(() => {
     if (isLogin && email) {
@@ -140,13 +143,14 @@ const Auth = () => {
               title: "Welcome back!",
               description: "You've successfully logged in."
             });
-            navigate('/dashboard');
+            const targetPath = userRole === 'parent' ? '/dashboard/monitoring' : '/dashboard/safety';
+            navigate(targetPath);
           }
         }
       } else {
         const {
           error
-        } = await signUp(email, password, fullName);
+        } = await signUp(email, password, fullName, role);
         if (error) {
           if (error.message.includes('already registered')) {
             toast({
@@ -167,7 +171,8 @@ const Auth = () => {
             title: "Account Created!",
             description: "Welcome to SafeHer. Let's set up your safety profile."
           });
-          navigate('/dashboard');
+          const targetPath = userRole === 'parent' ? '/dashboard/monitoring' : '/dashboard/safety';
+          navigate(targetPath);
         }
       }
     } finally {
@@ -203,6 +208,34 @@ const Auth = () => {
               </div>
               {errors.fullName && <p className="text-sm text-destructive">{errors.fullName}</p>}
             </div>}
+
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">I am a...</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button
+                    type="button"
+                    variant={role === 'woman' ? 'default' : 'outline'}
+                    className={`h-20 flex flex-col items-center justify-center gap-2 border-2 transition-all ${role === 'woman' ? 'border-primary shadow-md' : 'border-border'
+                      }`}
+                    onClick={() => setRole('woman')}
+                  >
+                    <User className="w-6 h-6" />
+                    <span className="text-xs font-bold uppercase tracking-wider">Woman</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={role === 'parent' ? 'default' : 'outline'}
+                    className={`h-20 flex flex-col items-center justify-center gap-2 border-2 transition-all ${role === 'parent' ? 'border-primary shadow-md' : 'border-border'
+                      }`}
+                    onClick={() => setRole('parent')}
+                  >
+                    <Shield className="w-6 h-6" />
+                    <span className="text-xs font-bold uppercase tracking-wider">Parent</span>
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">Email</Label>

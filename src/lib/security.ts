@@ -172,7 +172,7 @@ const getClientIP = async (): Promise<string> => {
   }
 };
 
-export type UserRole = 'user' | 'admin' | 'moderator' | 'helper';
+export type UserRole = 'woman' | 'parent' | 'admin';
 
 export interface Permission {
   resource: string;
@@ -180,35 +180,22 @@ export interface Permission {
 }
 
 export const rolePermissions: Record<UserRole, Permission[]> = {
-  user: [
+  woman: [
     { resource: 'profile', action: 'read' },
     { resource: 'profile', action: 'update' },
     { resource: 'sos', action: 'create' },
     { resource: 'evidence', action: 'create' },
     { resource: 'evidence', action: 'read' },
     { resource: 'contacts', action: 'manage' },
+    { resource: 'journey', action: 'manage' },
+    { resource: 'location', action: 'share' },
   ],
-  helper: [
+  parent: [
     { resource: 'profile', action: 'read' },
     { resource: 'profile', action: 'update' },
-    { resource: 'sos', action: 'create' },
-    { resource: 'evidence', action: 'create' },
-    { resource: 'evidence', action: 'read' },
-    { resource: 'contacts', action: 'manage' },
-    { resource: 'help_requests', action: 'read' },
-    { resource: 'help_requests', action: 'respond' },
-  ],
-  moderator: [
-    { resource: 'profile', action: 'read' },
-    { resource: 'profile', action: 'update' },
-    { resource: 'sos', action: 'create' },
-    { resource: 'evidence', action: 'create' },
-    { resource: 'evidence', action: 'read' },
-    { resource: 'contacts', action: 'manage' },
-    { resource: 'help_requests', action: 'read' },
-    { resource: 'help_requests', action: 'respond' },
-    { resource: 'reports', action: 'review' },
-    { resource: 'users', action: 'view' },
+    { resource: 'monitored_users', action: 'read' },
+    { resource: 'location', action: 'view' },
+    { resource: 'alerts', action: 'read' },
   ],
   admin: [
     { resource: '*', action: '*' }, // Full access

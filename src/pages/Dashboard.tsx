@@ -1,20 +1,12 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import SOSButton from '@/components/SOSButton';
-import TrustedContacts from '@/components/TrustedContacts';
-import QuickActions from '@/components/QuickActions';
-import SafetyStatus from '@/components/SafetyStatus';
-import AlertHistory from '@/components/AlertHistory';
-import { JourneyTracking } from '@/components/JourneyTracking';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import ThreatPrediction from '@/components/ThreatPrediction';
-import LocationTrackingMap from '@/components/LocationTrackingMap';
-import UnsafeZoneMap from '@/components/UnsafeZoneMap';
-import WomenHelpNetwork from '@/components/WomenHelpNetwork';
-import SilentEvidenceCollection from '@/components/SilentEvidenceCollection';
-import StealthMode from '@/components/StealthMode';
+import ParentDashboard from '@/components/ParentDashboard';
+import WomanDashboard from '@/components/WomanDashboard';
+import RoleGate from '@/components/RoleGate';
 import { LogOut, User, Settings } from 'lucide-react';
 import Logo from '@/components/Logo';
 import {
@@ -26,16 +18,25 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const Dashboard = () => {
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading, userRole } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    console.log('[Dashboard] Auth state - loading:', loading, 'user:', user ? 'present' : 'null');
     if (!loading && !user) {
-      console.log('[Dashboard] No user, redirecting to /auth');
       navigate('/auth');
+    } else if (!loading && user) {
+      // Handle role-based dashboard redirection
+      if (location.pathname === '/dashboard') {
+        const targetPath = userRole === 'parent' ? '/dashboard/monitoring' : '/dashboard/safety';
+        navigate(targetPath, { replace: true });
+      } else if (location.pathname === '/dashboard/monitoring' && userRole !== 'parent' && userRole !== 'admin') {
+        navigate('/dashboard/safety', { replace: true });
+      } else if (location.pathname === '/dashboard/safety' && userRole === 'parent') {
+        navigate('/dashboard/monitoring', { replace: true });
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, userRole, location.pathname, navigate]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -43,7 +44,6 @@ const Dashboard = () => {
   };
 
   if (loading) {
-    console.log('[Dashboard] Still loading...');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -54,30 +54,19 @@ const Dashboard = () => {
     );
   }
 
-  if (!user) {
-    console.log('[Dashboard] Loading complete but no user, returning null');
-    return null;
-  }
-
-  console.log('[Dashboard] Rendering dashboard for user:', user.id);
+  if (!user) return null;
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
+      {/* Shared Header */}
       <header className="sticky top-0 z-50 glass-card border-b-2 border-border/50 shadow-sm backdrop-blur-xl">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between max-w-7xl">
           <Logo size="md" showText={true} />
-
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full hover:bg-primary/10 transition-colors"
-                  title="Account menu"
-                >
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 transition-colors">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                     <User className="w-4 h-4 text-primary" />
                   </div>
@@ -94,10 +83,7 @@ const Dashboard = () => {
                   Profile Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleSignOut}
-                  className="text-destructive cursor-pointer focus:text-destructive"
-                >
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                   <LogOut className="w-4 h-4 mr-2" />
                   Sign Out
                 </DropdownMenuItem>
@@ -107,88 +93,34 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Role-Specific Main Content */}
       <main className="container mx-auto px-4 py-6 space-y-6 pb-32 max-w-7xl">
-        {/* Welcome Section */}
         <div className="animate-slide-up mb-2">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
-                Welcome back! 👋
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Your safety dashboard - everything you need in one place
-              </p>
-            </div>
-          </div>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
+            Welcome back! 👋
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Role: <span className="capitalize font-semibold text-primary">{userRole}</span>
+          </p>
         </div>
 
-        {/* Safety Status - Priority Section */}
-        <div className="animate-slide-up">
-          <SafetyStatus />
-        </div>
-
-        {/* Quick Actions - Easy Access */}
-        <div className="animate-slide-up-delay-1">
-          <QuickActions />
-        </div>
-
-        {/* Map and Journey Tracking - Side by Side on Desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-up-delay-1">
-          {/* Location Tracking Map */}
-          <div>
-            <LocationTrackingMap />
-          </div>
-
-          {/* Journey Tracking */}
-          <div>
-            <JourneyTracking />
-          </div>
-        </div>
-
-        {/* Unsafe Zone Intelligence Map */}
-        <div className="animate-slide-up-delay-2">
-          <UnsafeZoneMap />
-        </div>
-
-        {/* Women-to-Women Help Network */}
-        <div className="animate-slide-up-delay-2">
-          <WomenHelpNetwork />
-        </div>
-
-        {/* Silent Evidence Collection */}
-        <div className="animate-slide-up-delay-3">
-          <SilentEvidenceCollection />
-        </div>
-
-        {/* Stealth Mode & E2E Encryption */}
-        <div className="animate-slide-up-delay-3">
-          <StealthMode />
-        </div>
-
-        {/* AI Threat Prediction */}
-        <div className="animate-slide-up-delay-2">
-          <ThreatPrediction />
-        </div>
-
-        {/* Trusted Contacts and Alert History - Side by Side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-up-delay-2">
-          {/* Trusted Contacts */}
-          <div>
-            <TrustedContacts />
-          </div>
-
-          {/* Alert History */}
-          <div>
-            <AlertHistory />
-          </div>
-        </div>
+        {userRole === 'parent' ? (
+          <RoleGate allowedRoles={['parent']}>
+            <ParentDashboard />
+          </RoleGate>
+        ) : (
+          <RoleGate allowedRoles={['woman']}>
+            <WomanDashboard />
+          </RoleGate>
+        )}
       </main>
 
-      {/* Floating SOS Button */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-        <SOSButton size="large" />
-      </div>
+      {/* Floating SOS Button - Strict Isolation */}
+      <RoleGate allowedRoles={['woman']} contentOnly>
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+          <SOSButton size="large" />
+        </div>
+      </RoleGate>
     </div>
   );
 };

@@ -16,7 +16,7 @@ const QuickActions = () => {
         async (position) => {
           const { latitude, longitude } = position.coords;
           const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
-          
+
           if (navigator.share) {
             try {
               await navigator.share({
@@ -50,10 +50,10 @@ const QuickActions = () => {
     }
   };
 
-  const handleFakeCall = () => {
+  const handleParentsCall = () => {
     toast({
       title: "📞 Incoming Call...",
-      description: "Mom is calling you",
+      description: "Mom is calling ",
     });
     // In a real app, this would trigger a fake incoming call UI
   };
@@ -77,16 +77,16 @@ const QuickActions = () => {
     {
       icon: MapPin,
       label: 'Share Location',
-      description: 'Send to contacts',
+      description: 'Get out safely',
       onClick: handleShareLocation,
       color: 'text-accent',
       bgColor: 'bg-accent/10',
     },
     {
       icon: Phone,
-      label: 'Fake Call',
-      description: 'Get out safely',
-      onClick: handleFakeCall,
+      label: 'Parents Call',
+      description: ' Send to contacts',
+      onClick: handleParentsCall,
       color: 'text-success',
       bgColor: 'bg-success/10',
     },

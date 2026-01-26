@@ -9,7 +9,7 @@ interface AuthContextType {
   loading: boolean;
   userRole: UserRole;
   isMFAEnabled: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, role?: UserRole) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<UserRole>('user');
+  const [userRole, setUserRole] = useState<UserRole>('woman');
   const [isMFAEnabled, setIsMFAEnabled] = useState(false);
 
   // Load user role and MFA status
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (profile) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const p = profile as any;
-        setUserRole((p.role as UserRole) || 'user');
+        setUserRole((p.role as UserRole) || 'woman');
         setIsMFAEnabled(p.mfa_enabled || false);
       }
     } catch (error) {
@@ -75,6 +75,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (session?.user) {
           console.log('[AuthContext] User authenticated:', session.user.id);
+
+          // Immediate role check from metadata
+          const metadataRole = session.user.app_metadata?.role || session.user.user_metadata?.role;
+          if (metadataRole) {
+            setUserRole(metadataRole as UserRole);
+          }
+
           // Load settings in background, don't block loading state
           loadUserSecuritySettings(session.user.id);
           logSecurityEvent('auth_event', session.user.id, {
@@ -83,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }, 'low');
         } else {
           console.log('[AuthContext] No user session');
-          setUserRole('user');
+          setUserRole('woman');
           setIsMFAEnabled(false);
         }
 
@@ -111,6 +118,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          // Check metadata first for immediate role detection
+          const metadataRole = session.user.app_metadata?.role || session.user.user_metadata?.role;
+          if (metadataRole) {
+            setUserRole(metadataRole as UserRole);
+          }
+
           console.log('[AuthContext] Loading security settings for user:', session.user.id);
           loadUserSecuritySettings(session.user.id);
         }
@@ -141,7 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [loadUserSecuritySettings]);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, role: UserRole = 'woman') => {
     // Rate limiting
     const rateLimitKey = `signup_${email}`;
     if (!rateLimitCheck(rateLimitKey, 3, 60 * 60 * 1000)) { // 3 attempts per hour
@@ -157,7 +170,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          full_name: fullName
+          full_name: fullName,
+          role: role
         }
       }
     });
@@ -207,7 +221,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logSecurityEvent('signout', user.id, {}, 'low');
     }
     await supabase.auth.signOut();
-    setUserRole('user');
+    setUserRole('woman');
     setIsMFAEnabled(false);
   };
 
