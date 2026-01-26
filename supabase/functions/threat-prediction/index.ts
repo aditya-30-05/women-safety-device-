@@ -10,6 +10,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  
   try {
     const { location, timeOfDay, recentAlerts, isLocationSharing, activeJourney } = await req.json();
     
@@ -18,6 +19,7 @@ serve(async (req) => {
       throw new Error('Women Safety Device API key is not configured');
     }
 
+    
     const currentHour = new Date().getHours();
     const timeContext = currentHour >= 22 || currentHour < 6 ? 'late night' : 
                         currentHour >= 18 ? 'evening' : 
