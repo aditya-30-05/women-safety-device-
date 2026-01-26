@@ -176,7 +176,6 @@ safe-haven-web-1/
 ├─ INFINITE_LOADING_FIX.md # Bug fix notes
 ├─ lint_results.txt # Linting results
 └─ README.md # Project info (this file)
-
 ---
 ---
 
