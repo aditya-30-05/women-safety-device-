@@ -113,6 +113,7 @@ Analyze this context and provide threat prediction.`;
       };
     }
 
+   
     return new Response(JSON.stringify(prediction), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
