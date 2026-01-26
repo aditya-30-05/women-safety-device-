@@ -179,46 +179,7 @@ safe-haven-web-1/
 └─ README.md # Project info (this file)
 ---
 
-<<<<<<< HEAD
-## ⚙️ Installation & Setup
 
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v18+)
-- [Supabase Account](https://supabase.com/)
-- [Google Maps API Key](https://console.cloud.google.com/)
-
-### Step-by-Step Run Guide
-
-1.  **Clone the Repository:**
-    ```bash
-    git clone https://github.com/your-username/safe-her.git
-    cd safe-her
-    ```
-
-2.  **Frontend Setup:**
-    ```bash
-    npm install
-    # Create .env and add:
-    # VITE_SUPABASE_URL=your_url
-    # VITE_SUPABASE_ANON_KEY=your_key
-    # VITE_GOOGLE_MAPS_API_KEY=your_google_key
-    npm run dev
-    ```
-
-3.  **Backend Setup (for SOS Gateway):**
-    ```bash
-    cd server
-    npm install
-    npm run start:dev
-    ```
-=======
->>>>>>> 1885825901f1d7616b154a5671a77359b1eba312
-
-4.  **Supabase Setup:**
-    - Link your project using `supabase link`.
-    - Run migrations: `supabase db push`.
-
----
 
 <<<<<<< HEAD
 ## 🔐 Security Implementation
