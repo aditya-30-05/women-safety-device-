@@ -177,11 +177,9 @@ safe-haven-web-1/
 ├─ INFINITE_LOADING_FIX.md # Bug fix notes
 ├─ lint_results.txt # Linting results
 └─ README.md # Project info (this file)
----
 
 
 
-<<<<<<< HEAD
 ## 🔐 Security Implementation
 
 - **Stealth Disguise:** Dynamically changes document title, favicon, and UI layout to mimic harmless apps like "Calculator" or "Notes."
