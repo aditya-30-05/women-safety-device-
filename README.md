@@ -47,6 +47,20 @@ In an increasingly unpredictable world, personal safety is a paramount concern. 
 - **Iconography:** [Lucide React](https://lucide.dev/)
 - **Maps:** [Google Maps JavaScript API](https://developers.google.com/maps) & [Mapbox GL](https://www.mapbox.com/)
 - **State Management:** [TanStack Query (React Query)](https://tanstack.com/query/latest) & React Context API
+<<<<<<< HEAD
+
+### Backend & Database
+- **Primary Backend:** [NestJS](https://nestjs.com/) (SOS WebSocket Gateway)
+- **Real-time Engine:** [Socket.io](https://socket.io/)
+- **Database/Auth:** [Supabase](https://supabase.com/) (PostgreSQL)
+- **Serverless:** Supabase Edge Functions (Deno)
+
+### Security & Safety
+- **Encryption:** Web Crypto API for local E2EE.
+- **Auth:** Supabase Auth (Email/Password, Google OAuth).
+- **Persistence:** LocalStorage for offline-first capabilities.
+=======
+>>>>>>> 1885825901f1d7616b154a5671a77359b1eba312
 
 ### Backend & Database
 - **Primary Backend:** [NestJS](https://nestjs.com/) (SOS WebSocket Gateway)
@@ -93,10 +107,79 @@ SafeHer follows a decentralized yet highly synchronized architecture:
 │   ├── pages/           # Main application views (Dashboard, Auth, Profile)
 │   └── integrations/    # Supabase & external tool clients
 └── public/              # Static assets and PWA icons
-```
+---
+
+## 🧩 System Architecture
+
+SafeHer follows a decentralized yet highly synchronized architecture:
+
+1.  **Client (Frontend):** Runs the main UI, handles local encryption, manages offline evidence storage, and initiates Geolocation tracking.
+2.  **Real-time Gateway (NestJS):** A dedicated server handling high-frequency WebSocket connections for SOS broadcasts, ensuring sub-second delivery to the help network.
+3.  **Data Layer (Supabase):** Stores user profiles, encrypted evidence, trusted contacts, and historical safety data.
+4.  **Integration Services:** Google Maps for visualization and Supabase Edge Functions for background tasks like threat analysis.
+
+**Data Flow:**
+`Action Trigger (SOS)` → `Local Encryption` → `WebSocket Broadcast (NestJS)` → `Database Persistence (Supabase)` → `Notification Delivery`
 
 ---
 
+## 📁 Project Structure
+
+```text
+├── .agent/              # Agent workflows and configurations
+├── server/              # NestJS Backend (Real-time SOS Gateway)
+│   ├── src/sos/        # WebSocket logic for emergency alerts
+│   └── main.ts         # Gateway entry point
+├── supabase/            # Supabase configuration & migrations
+│   ├── migrations/      # SQL schema definitions
+│   └── functions/       # Edge functions for threat prediction
+├── src/
+│   ├── components/      # Core UI modules (StealthMode, SOSButton, etc.)
+│   ├── contexts/        # Auth and Google Maps integration contexts
+│   ├── hooks/           # Custom React hooks for security & state
+│   ├── lib/             # Utility functions (Encryption, API clients)
+│   ├── pages/           # Main application views (Dashboard, Auth, Profile)
+│   └── integrations/    # Supabase & external tool clients
+└── public/              # Static assets and PWA icons
+```
+
+safe-haven-web-1/
+│
+├─ src/
+│ ├─ components/
+│ │ ├─ MockMap.tsx # Mock map component for testing Google Maps integration
+│ │ └─ ... # Other UI components
+│ │
+│ ├─ contexts/
+│ │ └─ GoogleMapsContext.tsx # Context provider for Google Maps API
+│ │
+│ ├─ lib/
+│ │ └─ googleMapsLoader.ts # Utility to load Google Maps API
+│ │
+│ ├─ networking/
+│ │ ├─ apiClient.ts # Axios/fetch setup for API calls
+│ │ └─ endpoints.ts # API endpoint definitions
+│ │
+│ ├─ auth/
+│ │ ├─ jwtUtils.ts # JWT token generation, verification functions
+│ │ └─ authMiddleware.ts # Middleware for protected routes
+│ │
+│ └─ ... # Other source files
+│
+├─ backend/
+│ ├─ controllers/ # Business logic for endpoints
+│ ├─ models/ # Database models
+│ ├─ routes/ # Express routes
+│ └─ server.js # Backend server entry point
+│
+├─ public/ # Static assets like images, icons
+├─ package.json # NPM dependencies & scripts
+├─ INFINITE_LOADING_FIX.md # Bug fix notes
+├─ lint_results.txt # Linting results
+└─ README.md # Project info (this file)
+---
+
+<<<<<<< HEAD
 ## ⚙️ Installation & Setup
 
 ### Prerequisites
@@ -128,6 +211,8 @@ SafeHer follows a decentralized yet highly synchronized architecture:
     npm install
     npm run start:dev
     ```
+=======
+>>>>>>> 1885825901f1d7616b154a5671a77359b1eba312
 
 4.  **Supabase Setup:**
     - Link your project using `supabase link`.
@@ -135,6 +220,7 @@ SafeHer follows a decentralized yet highly synchronized architecture:
 
 ---
 
+<<<<<<< HEAD
 ## 🔐 Security Implementation
 
 - **Stealth Disguise:** Dynamically changes document title, favicon, and UI layout to mimic harmless apps like "Calculator" or "Notes."
@@ -153,3 +239,11 @@ SafeHer follows a decentralized yet highly synchronized architecture:
 ---
 
 *Made with ❤️ for the safety and empowerment of women everywhere.*
+=======
+
+
+
+
+
+ 
+>>>>>>> 1885825901f1d7616b154a5671a77359b1eba312

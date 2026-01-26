@@ -97,27 +97,28 @@ Map component was:
 
 ### Files Modified:
 1. **`src/App.tsx`**
+2. 
    - Added `GoogleMapsProvider` wrapper
    - Ensures single Maps API initialization
 
-2. **`src/contexts/AuthContext.tsx`**
+3. **`src/contexts/AuthContext.tsx`**
    - Fixed blocking `await` in auth initialization
    - Added safety timeout (5 seconds)
    - Added mounted guard and cleanup
    - Added comprehensive logging
    - Made profile loading non-blocking
 
-3. **`src/components/LocationTrackingMap.tsx`**
+4. **`src/components/LocationTrackingMap.tsx`**
    - Removed local `useJsApiLoader`
    - Now uses `useGoogleMaps()` hook
 
-4. **`src/components/UnsafeZoneMap.tsx`**
+5. **`src/components/UnsafeZoneMap.tsx`**
    - Removed local `useJsApiLoader`
    - Now uses `useGoogleMaps()` hook
    - Added GPS timeout protection
    - Sets default location immediately
 
-5. **`src/pages/Dashboard.tsx`**
+6. **`src/pages/Dashboard.tsx`**
    - Added logging to track render states
    - Better debugging for auth flow
 

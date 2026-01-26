@@ -26,6 +26,7 @@ To make the "Sign in with Google" button work, you need to configure your Supaba
 
 ## Step 2: Configure Supabase
 
+
 1. Go to your [Supabase Dashboard](https://supabase.com/dashboard).
 2. Select your project.
 3. Navigate to **Authentication** > **Providers**.
