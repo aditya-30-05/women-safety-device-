@@ -178,7 +178,8 @@ safe-haven-web-1/
 ├─ lint_results.txt # Linting results
 └─ README.md # Project info (this file)
 
-
+---
+---
 
 ## 🔐 Security Implementation
 
