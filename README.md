@@ -89,6 +89,7 @@ SafeHer follows a decentralized yet highly synchronized architecture:
 
 ---
 
+
 ## 📁 Project Structure
 
 ```text
