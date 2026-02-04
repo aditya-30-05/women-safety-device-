@@ -9,6 +9,7 @@ This document outlines the architecture for the **SafeHer MCP (Model Context Pro
 
 ---
 
+
 ## 2. Architecture Overview
 
 ### ASCII Representation
