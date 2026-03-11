@@ -111,24 +111,6 @@ mcp-server/
 
 ---
 
-## 7. Demo & Hackathon Boost
-
-### 🏆 2–3 MCP-Powered Demo Features
-1. **Dynamic Threat Clustering:** Instead of static unsafe zones, the AI analyzes the "velocity" of alerts. If 3 SOS calls happen in the same square kilometer in 2 hours, the MCP tool `threat_zone_insights` automatically flags it to admins as a "Critical Emerging Cluster."
-2. **AI Safety Scorecard:** When a user starts a Journey, the MCP Agent reads the path and generates a "Safety Confidence Score" (1-100) based on historical data, time of day, and community help network density along that path.
-3. **Admin Incident Recap:** Instead of scrolling through logs, the Admin clicks an alert and the MCP Agent uses `build_admin_summary` to provide a 3-sentence situation report: *"Active SOS at 10:15 PM in Park Street. User has 2 trusted contacts nearby. Historically, this area is low-risk but has seen a 20% spike in alerts this week."*
-
-### 🎤 30-Second Hackathon Script
-> "SafeHer is built for 100% reliability. Our core safety-critical system handles SOS and tracking via a robust Supabase backend that works even in low-signal environments.
->
-> But we went a step further. We've integrated a **Model Context Protocol (MCP)** intelligence layer. This is a parallel AI service that 'oversees' the data. It analyzes SOS patterns, predicts emerging clusters, and provides safety scoring—all without ever being allowed to touch the critical emergency code.
->
-> It’s a safety-first AI architecture: Intelligence that enhances, but never risks, the actual safety net. If the AI fails, the SOS button still works. That’s production-ready safety-critical engineering."
-
----
-
-## 8. Professional README Section
-
 ### 🤖 AI & MCP Intelligence Layer
 
 The **SafeHer Intelligence Layer** is an advanced analytical service built on the **Model Context Protocol (MCP)**. It acts as a parallel "Brain" that processes safety data to provide proactive insights without compromising the core emergency system.
